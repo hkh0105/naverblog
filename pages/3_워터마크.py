@@ -120,6 +120,8 @@ st.divider()
 # ═══════════════════════════════════════
 if st.button("워터마크 적용", type="primary", use_container_width=True):
 
+    st.info(f"설정: 배치={position_value}, 투명도={wm_opacity}%(alpha={int(wm_opacity * 255 / 100)}), 폰트={wm_font_size}, 색상={wm_color}")
+
     # ─── 이미지 처리 ───
     if image_files:
         st.subheader("이미지 결과")
