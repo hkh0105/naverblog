@@ -96,15 +96,15 @@ with col2:
 
 col3, col4, col5 = st.columns(3)
 with col3:
-    wm_opacity = st.slider("투명도", 5, 100, 10, step=5, help="낮을수록 투명, 높을수록 진하게")
+    wm_opacity = st.slider("투명도", 1, 100, 5, step=1, help="낮을수록 투명, 높을수록 진하게")
 with col4:
-    wm_font_size = st.slider("글자 크기", 10, 200, 80, step=5)
+    wm_font_size = st.slider("글자 크기", 10, 200, 50, step=5)
 with col5:
     wm_rotation = st.slider("회전 각도", 0, 90, 30, step=5, help="대각선 모드에서 사용")
 
 col6, col7 = st.columns(2)
 with col6:
-    wm_color = st.color_picker("글자 색상", value="#CCCCCC")
+    wm_color = st.color_picker("글자 색상", value="#FFFFFF")
 with col7:
     wm_bg_box = st.checkbox("배경 박스 표시", value=False, help="코너/중앙 모드에서 텍스트 뒤에 반투명 배경")
 
