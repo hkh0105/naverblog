@@ -37,14 +37,6 @@ st.markdown("""
     }
     .page-header h1 { color: white !important; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.3rem 0; }
     .page-header p { color: rgba(255,255,255,0.85); font-size: 0.88rem; margin: 0; font-weight: 300; }
-    .settings-section {
-        background: #f8f7ff;
-        border: 1px solid #e9e5ff;
-        border-radius: 0.75rem;
-        padding: 1.25rem;
-        margin-bottom: 1.5rem;
-    }
-    .settings-section h3 { font-size: 0.95rem; font-weight: 600; color: #5b21b6; margin: 0 0 0.75rem 0; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -56,9 +48,35 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 # ═══════════════════════════════════════
-# 공통 설정
+# 파일 업로드 (이미지 + PDF 통합)
 # ═══════════════════════════════════════
-st.markdown('<div class="settings-section"><h3>워터마크 설정</h3></div>', unsafe_allow_html=True)
+uploaded_files = st.file_uploader(
+    "파일 업로드 (이미지 또는 PDF)",
+    type=["png", "jpg", "jpeg", "webp", "pdf", "application/pdf"],
+    accept_multiple_files=True,
+    key="wm_files",
+)
+
+if not uploaded_files:
+    st.info("이미지(PNG, JPG, WEBP) 또는 PDF 파일을 업로드하세요.")
+    st.stop()
+
+# 파일 분류
+image_files = []
+pdf_files = []
+for f in uploaded_files:
+    ext = f.name.rsplit(".", 1)[-1].lower() if "." in f.name else ""
+    if ext in ("png", "jpg", "jpeg", "webp"):
+        image_files.append(f)
+    elif ext == "pdf" or f.type == "application/pdf":
+        pdf_files.append(f)
+
+st.markdown(f"**업로드:** 이미지 {len(image_files)}장, PDF {len(pdf_files)}개")
+
+# ═══════════════════════════════════════
+# 워터마크 설정
+# ═══════════════════════════════════════
+st.subheader("설정")
 
 POSITION_OPTIONS = {
     "대각선 반복 (타일)": "diagonal-tiled",
@@ -72,18 +90,9 @@ POSITION_OPTIONS = {
 
 col1, col2 = st.columns(2)
 with col1:
-    wm_text = st.text_area(
-        "워터마크 텍스트",
-        value="보보쌤 | byhur99",
-        height=68,
-        help="여러 줄 입력 가능",
-    )
+    wm_text = st.text_area("워터마크 텍스트", value="보보쌤 | byhur99", height=68, help="여러 줄 입력 가능")
 with col2:
-    wm_position = st.selectbox(
-        "배치 스타일",
-        list(POSITION_OPTIONS.keys()),
-        index=0,
-    )
+    wm_position = st.selectbox("배치 스타일", list(POSITION_OPTIONS.keys()), index=0)
 
 col3, col4, col5 = st.columns(3)
 with col3:
@@ -104,91 +113,67 @@ color_rgb = _hex_to_rgb(wm_color)
 
 st.divider()
 
-# ─── 탭 ───
-tab_image, tab_pdf = st.tabs(["🖼️ 이미지 워터마크", "📄 PDF 워터마크"])
-
 # ═══════════════════════════════════════
-# 이미지 워터마크
+# 워터마크 적용
 # ═══════════════════════════════════════
-with tab_image:
-    img_files = st.file_uploader(
-        "이미지 업로드",
-        type=["png", "jpg", "jpeg", "webp"],
-        accept_multiple_files=True,
-        key="wm_images",
-    )
+if st.button("워터마크 적용", type="primary", use_container_width=True):
 
-    if img_files:
-        st.markdown(f"**{len(img_files)}장** 업로드됨")
+    # ─── 이미지 처리 ───
+    if image_files:
+        st.subheader("이미지 결과")
+        img_results = []
+        for f in image_files:
+            with st.spinner(f"{f.name} 처리 중..."):
+                wm_data = watermark_image(
+                    f.getvalue(),
+                    text=wm_text,
+                    opacity=int(wm_opacity * 255 / 100),
+                    position=position_value,
+                    font_size=wm_font_size,
+                    color=color_rgb,
+                    rotation=wm_rotation,
+                    bg_box=wm_bg_box,
+                )
+                img_results.append((f.name, wm_data))
 
-        if st.button("워터마크 적용", type="primary", use_container_width=True, key="apply_img"):
-            results = []
-            for f in img_files:
-                with st.spinner(f"{f.name} 처리 중..."):
-                    wm_data = watermark_image(
-                        f.getvalue(),
+        st.success(f"이미지 {len(img_results)}장 워터마크 완료")
+        cols = st.columns(min(len(img_results), 3))
+        for idx, (name, data) in enumerate(img_results):
+            with cols[idx % 3]:
+                st.image(data, caption=name, use_container_width=True)
+                st.download_button(
+                    "다운로드",
+                    data=data,
+                    file_name=f"wm_{name.rsplit('.', 1)[0]}.png",
+                    mime="image/png",
+                    key=f"dl_img_{idx}",
+                )
+
+    # ─── PDF 처리 ───
+    if pdf_files:
+        st.subheader("PDF 결과")
+        for pf in pdf_files:
+            with st.spinner(f"{pf.name} 처리 중..."):
+                try:
+                    wm_pdf_data = watermark_pdf(
+                        pf.getvalue(),
                         text=wm_text,
-                        opacity=int(wm_opacity * 255 / 100),
+                        opacity=wm_opacity / 100,
                         position=position_value,
                         font_size=wm_font_size,
                         color=color_rgb,
                         rotation=wm_rotation,
-                        bg_box=wm_bg_box,
                     )
-                    results.append((f.name, wm_data))
-
-            st.success(f"{len(results)}장 워터마크 완료")
-
-            cols = st.columns(min(len(results), 3))
-            for idx, (name, data) in enumerate(results):
-                with cols[idx % 3]:
-                    st.image(data, caption=name, use_container_width=True)
+                    st.success(f"{pf.name} 워터마크 완료")
                     st.download_button(
-                        "다운로드",
-                        data=data,
-                        file_name=f"wm_{name.rsplit('.', 1)[0]}.png",
-                        mime="image/png",
-                        key=f"dl_wm_img_{idx}",
+                        f"📥 {pf.name} 다운로드",
+                        data=wm_pdf_data,
+                        file_name=f"wm_{pf.name}",
+                        mime="application/pdf",
+                        use_container_width=True,
+                        key=f"dl_pdf_{pf.name}",
                     )
-
-# ═══════════════════════════════════════
-# PDF 워터마크
-# ═══════════════════════════════════════
-with tab_pdf:
-    pdf_files = st.file_uploader(
-        "PDF 업로드",
-        type=["pdf"],
-        accept_multiple_files=True,
-        key="wm_pdf",
-    )
-
-    if pdf_files:
-        for pf in pdf_files:
-            st.info(f"**{pf.name}** ({pf.size / 1024:.0f} KB)")
-
-        if st.button("워터마크 적용", type="primary", use_container_width=True, key="apply_pdf"):
-            for pf in pdf_files:
-                with st.spinner(f"{pf.name} 처리 중..."):
-                    try:
-                        wm_pdf_data = watermark_pdf(
-                            pf.getvalue(),
-                            text=wm_text,
-                            opacity=wm_opacity / 100,
-                            position=position_value,
-                            font_size=wm_font_size,
-                            color=color_rgb,
-                            rotation=wm_rotation,
-                        )
-                        st.success(f"{pf.name} 워터마크 완료")
-                        st.download_button(
-                            f"📥 {pf.name} 다운로드",
-                            data=wm_pdf_data,
-                            file_name=f"wm_{pf.name}",
-                            mime="application/pdf",
-                            use_container_width=True,
-                            key=f"dl_wm_pdf_{pf.name}",
-                        )
-                    except ImportError:
-                        st.error("pypdf 패키지가 필요합니다. `pip install pypdf`")
-                    except Exception as e:
-                        st.error(f"PDF 처리 실패: {e}")
+                except ImportError:
+                    st.error("pypdf 패키지가 필요합니다. `pip install pypdf`")
+                except Exception as e:
+                    st.error(f"PDF 처리 실패: {e}")
