@@ -12,6 +12,9 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
+from naverblog.config import inject_default_keys
+inject_default_keys()
+
 from naverblog.database import Database
 from naverblog.image_gen import (
     generate_blog_images,

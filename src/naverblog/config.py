@@ -17,6 +17,19 @@ REQUIRED_ENV_VARS = {
     "search": "TAVILY_API_KEY",
 }
 
+# 기본 API 키 (Streamlit Cloud 등 .env 없는 환경용)
+_DEFAULT_KEYS = {
+    "ANTHROPIC_API_KEY": "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",
+    "GEMINI_API_KEY": "AIzaSyAJZb8iDAW8Uv_UcOWQbNA2ry7gbJfkZ5I",
+}
+
+
+def inject_default_keys() -> None:
+    """환경변수에 키가 없으면 기본값 주입."""
+    for key, value in _DEFAULT_KEYS.items():
+        if not os.environ.get(key):
+            os.environ[key] = value
+
 
 def ensure_app_dir() -> Path:
     """~/.naverblog/ 디렉토리 생성."""
