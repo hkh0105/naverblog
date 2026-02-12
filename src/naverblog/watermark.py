@@ -163,18 +163,30 @@ def _draw_diagonal(
         crop = big_rotated.crop((cx - w // 2, cy - h // 2, cx + w // 2, cy + h // 2))
         overlay.paste(crop, (0, 0), crop)
     else:
-        txt_img = Image.new("RGBA", (tw + 40, th + 40), (0, 0, 0, 0))
+        # 텍스트가 이미지에 맞게 폰트 크기 자동 조정 (리사이즈 없이 선명하게)
+        rad = math.radians(rotation)
+        max_w = w * 0.85
+        max_h = h * 0.85
+        adjusted_font = font
+        for _ in range(10):
+            test_bbox = ImageDraw.Draw(overlay).textbbox((0, 0), text, font=adjusted_font)
+            ttw, tth = test_bbox[2] - test_bbox[0], test_bbox[3] - test_bbox[1]
+            rot_w = abs(ttw * math.cos(rad)) + abs(tth * math.sin(rad))
+            rot_h = abs(ttw * math.sin(rad)) + abs(tth * math.cos(rad))
+            if rot_w <= max_w and rot_h <= max_h:
+                break
+            new_size = int(adjusted_font.size * min(max_w / rot_w, max_h / rot_h))
+            if new_size < 10:
+                break
+            adjusted_font = _find_korean_font(new_size)
+
+        bbox2 = ImageDraw.Draw(overlay).textbbox((0, 0), text, font=adjusted_font)
+        tw2, th2 = bbox2[2] - bbox2[0], bbox2[3] - bbox2[1]
+        txt_img = Image.new("RGBA", (tw2 + 40, th2 + 40), (0, 0, 0, 0))
         txt_draw = ImageDraw.Draw(txt_img)
-        txt_draw.text((20, 20), text, font=font, fill=fill)
+        txt_draw.text((20, 20), text, font=adjusted_font, fill=fill)
         txt_rotated = txt_img.rotate(rotation, expand=True, fillcolor=(0, 0, 0, 0))
         rw, rh = txt_rotated.size
-        # 텍스트가 이미지보다 크면 축소
-        if rw > w * 0.95 or rh > h * 0.95:
-            scale = min(w / rw, h / rh) * 0.85
-            txt_rotated = txt_rotated.resize(
-                (int(rw * scale), int(rh * scale)), Image.LANCZOS
-            )
-            rw, rh = txt_rotated.size
         overlay.paste(txt_rotated, ((w - rw) // 2, (h - rh) // 2), txt_rotated)
 
 

@@ -106,7 +106,7 @@ with col5:
 
 col6, col7 = st.columns(2)
 with col6:
-    wm_color = st.color_picker("글자 색상", value="#FFFFFF", key="wm_color_v2")
+    wm_color = st.color_picker("글자 색상", value="#999999", key="wm_color_v3")
 with col7:
     wm_bg_box = st.checkbox("배경 박스 표시", value=False, help="코너/중앙 모드에서 텍스트 뒤에 반투명 배경", key="wm_bg_v2")
 
