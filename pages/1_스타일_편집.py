@@ -28,6 +28,23 @@ st.set_page_config(
     layout="wide",
 )
 
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+    html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; }
+    .block-container { max-width: 960px; padding-top: 1.5rem; }
+    .page-header {
+        background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #c4b5fd 100%);
+        padding: 2rem 2.5rem;
+        border-radius: 1.25rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    .page-header h1 { color: white !important; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.3rem 0; }
+    .page-header p { color: rgba(255,255,255,0.85); font-size: 0.88rem; margin: 0; font-weight: 300; }
+</style>
+""", unsafe_allow_html=True)
+
 
 @st.cache_resource
 def get_db() -> Database:
@@ -36,17 +53,12 @@ def get_db() -> Database:
 
 db = get_db()
 
-# DB에 기본값 시드 (최초 1회)
 seed_default_styles(db)
 
-# ─── 헤더 ───
 st.markdown("""
-<div style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-     padding: 1.5rem; border-radius: 1rem; color: white; margin-bottom: 1.5rem;">
-    <h1 style="color: white; margin: 0; font-size: 1.8rem;">🎨 스타일 가이드 편집</h1>
-    <p style="color: rgba(255,255,255,0.85); margin: 0.5rem 0 0 0;">
-        보보쌤 블로그 문체와 구조 규칙을 여기서 수정하세요. 수정 즉시 다음 글 생성에 반영됩니다.
-    </p>
+<div class="page-header">
+    <h1>스타일 가이드 편집</h1>
+    <p>보보쌤 블로그 문체와 구조 규칙을 수정하세요. 수정 즉시 다음 글 생성에 반영됩니다.</p>
 </div>
 """, unsafe_allow_html=True)
 

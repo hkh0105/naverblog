@@ -27,103 +27,232 @@ from naverblog.pipeline import run_pipeline
 from naverblog.skills import SkillRegistry
 from naverblog.skills.blog_style import AVAILABLE_CATEGORIES, get_available_categories, seed_default_styles
 
+__version__ = "0.1.0"
+
 # ─── 카테고리별 스킬 프리셋 ───
 CATEGORY_SKILL_PRESETS: dict[str, dict] = {
     "과목별 공부 로직": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "📚 교재/학습법 최신 정보 + 기존 글 참조",
+        "note": "교재/학습법 최신 정보 + 기존 글 참조",
     },
     "입시 파이널 : 면접": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "🎤 면접 기출 트렌드 + 기존 글 참조",
+        "note": "면접 기출 트렌드 + 기존 글 참조",
     },
     "입시 파이널 : 자기소개서": {
         "search": False, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "✏️ 스타일 가이드 + 기존 글 참조",
+        "note": "스타일 가이드 + 기존 글 참조",
     },
     "생기부 : 수시의 모든 것": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "📋 최신 세특 트렌드 + 기존 글 참조",
+        "note": "최신 세특 트렌드 + 기존 글 참조",
     },
     "77일만에 의대 가기": {
         "search": False, "blog_style": True, "reference_posts": True, "image_gen": True,
-        "note": "💪 개인 경험 스토리 + 기존 글 참조 + 이미지",
+        "note": "개인 경험 스토리 + 기존 글 참조 + 이미지",
     },
     "[전략] 입시 설계의 정석": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "📊 최신 입시 데이터 + 기존 글 참조",
+        "note": "최신 입시 데이터 + 기존 글 참조",
     },
     "시기별 로드맵": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "🗓️ 시기별 최신 정보 + 기존 글 참조",
+        "note": "시기별 최신 정보 + 기존 글 참조",
     },
     "학원 / 과외의 모든 것": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "💰 학원 정보 + 기존 글 참조",
+        "note": "학원 정보 + 기존 글 참조",
     },
     "블로그 활용법 (후기 zip)": {
         "search": False, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "⭐ 후기 정리 + 기존 글 참조",
+        "note": "후기 정리 + 기존 글 참조",
     },
     "입시 정보 모음": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "🔍 입시 데이터 + 기존 글 참조",
+        "note": "입시 데이터 + 기존 글 참조",
     },
 }
 
 # ─── 페이지 설정 ───
 st.set_page_config(
-    page_title="보보쌤 블로그 글 생성기 | 보윤공주",
-    page_icon="👸",
+    page_title="보보쌤 블로그 글 생성기",
+    page_icon="✍️",
     layout="wide",
 )
 
-# ─── CSS 커스텀 스타일 ───
+# ─── CSS ───
 st.markdown("""
 <style>
-    .main-header {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        padding: 2rem;
-        border-radius: 1rem;
+    /* 전역 */
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+    html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; }
+    .block-container { max-width: 960px; padding-top: 1.5rem; }
+
+    /* 헤더 */
+    .hero {
+        background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #c4b5fd 100%);
+        padding: 2.5rem 2.5rem 2rem;
+        border-radius: 1.25rem;
         color: white;
-        margin-bottom: 1.5rem;
+        margin-bottom: 2rem;
+        position: relative;
+        overflow: hidden;
     }
-    .main-header h1 { color: white !important; margin: 0; font-size: 2rem; }
-    .main-header p { color: rgba(255,255,255,0.85); margin: 0.5rem 0 0 0; }
-    .main-header .boyun-badge {
+    .hero::before {
+        content: '';
+        position: absolute; top: -50%; right: -20%;
+        width: 400px; height: 400px;
+        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
+        border-radius: 50%;
+    }
+    .hero h1 {
+        color: white !important;
+        font-size: 1.75rem;
+        font-weight: 700;
+        margin: 0 0 0.4rem 0;
+        letter-spacing: -0.02em;
+    }
+    .hero .subtitle {
+        color: rgba(255,255,255,0.88);
+        font-size: 0.92rem;
+        font-weight: 300;
+        margin: 0;
+        line-height: 1.5;
+    }
+    .hero .meta {
+        display: flex;
+        align-items: center;
+        gap: 0.6rem;
+        margin-top: 1rem;
+        flex-wrap: wrap;
+    }
+    .hero .badge {
         display: inline-block;
-        background: rgba(255,255,255,0.2);
+        background: rgba(255,255,255,0.18);
+        backdrop-filter: blur(4px);
+        border: 1px solid rgba(255,255,255,0.15);
         border-radius: 2rem;
-        padding: 0.3rem 0.8rem;
-        font-size: 0.75rem;
-        margin-top: 0.5rem;
-        color: #ffe0f0;
+        padding: 0.25rem 0.75rem;
+        font-size: 0.72rem;
+        font-weight: 500;
+        color: white;
     }
-    [data-testid="stSidebar"] { background-color: #f8f9fc; }
+    .hero .love {
+        font-size: 0.72rem;
+        color: #fde68a;
+        font-weight: 400;
+    }
+
+    /* 사이드바 */
+    [data-testid="stSidebar"] {
+        background: linear-gradient(180deg, #f5f3ff 0%, #faf5ff 100%);
+    }
+    [data-testid="stSidebar"] .stMarkdown h2 {
+        font-size: 1.05rem;
+        font-weight: 600;
+        color: #4c1d95;
+        letter-spacing: -0.01em;
+    }
+    [data-testid="stSidebar"] .stMarkdown h3 {
+        font-size: 0.88rem;
+        font-weight: 600;
+        color: #6d28d9;
+    }
+    .sidebar-section-label {
+        font-size: 0.68rem;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #8b5cf6;
+        margin-bottom: 0.25rem;
+    }
     .skill-preset-note {
-        background: #eef2ff;
-        border-left: 3px solid #667eea;
+        background: linear-gradient(90deg, #ede9fe, #f5f3ff);
+        border-left: 3px solid #8b5cf6;
         border-radius: 0 0.5rem 0.5rem 0;
-        padding: 0.6rem 0.8rem;
-        font-size: 0.82rem;
-        color: #4338ca;
-        margin: 0.3rem 0 0.8rem 0;
+        padding: 0.5rem 0.7rem;
+        font-size: 0.78rem;
+        color: #5b21b6;
+        margin: 0.25rem 0 0.6rem 0;
+        font-weight: 400;
     }
-    [data-testid="stForm"] { border: none !important; padding: 0 !important; }
-    .boyun-footer {
-        text-align: center;
-        padding: 1rem;
-        color: #9ca3af;
-        font-size: 0.8rem;
+
+    /* 폼 */
+    [data-testid="stForm"] {
+        border: 1px solid #e9e5f5 !important;
+        border-radius: 1rem !important;
+        padding: 1.25rem !important;
+        background: white;
     }
-    .boyun-footer .highlight { color: #a78bfa; font-weight: 600; }
+
+    /* 카드 스타일 expander */
+    .streamlit-expanderHeader {
+        font-weight: 500 !important;
+        font-size: 0.88rem !important;
+    }
+
+    /* 이미지 힌트 */
     .image-placement-hint {
         background: #f0fdf4;
         border: 1px solid #bbf7d0;
-        border-radius: 0.5rem;
-        padding: 0.8rem;
-        font-size: 0.82rem;
+        border-radius: 0.75rem;
+        padding: 0.75rem 1rem;
+        font-size: 0.8rem;
         margin: 0.5rem 0;
+        color: #166534;
+    }
+
+    /* 결과 성공 */
+    .result-success {
+        background: linear-gradient(90deg, #f0fdf4, #ecfdf5);
+        border: 1px solid #86efac;
+        border-radius: 0.75rem;
+        padding: 0.8rem 1rem;
+        font-size: 0.88rem;
+        color: #166534;
+        font-weight: 500;
+        margin-bottom: 1rem;
+    }
+
+    /* 푸터 */
+    .app-footer {
+        text-align: center;
+        padding: 1.5rem 0;
+        color: #a1a1aa;
+        font-size: 0.75rem;
+        line-height: 1.8;
+    }
+    .app-footer a {
+        color: #8b5cf6;
+        text-decoration: none;
+        font-weight: 500;
+    }
+    .app-footer .love-msg {
+        color: #c084fc;
+        font-weight: 500;
+        font-size: 0.78rem;
+    }
+    .app-footer .ver {
+        display: inline-block;
+        background: #f4f4f5;
+        border-radius: 1rem;
+        padding: 0.1rem 0.5rem;
+        font-size: 0.65rem;
+        color: #a1a1aa;
+        font-weight: 500;
+    }
+
+    /* 히스토리 */
+    .history-label {
+        font-size: 0.92rem;
+        font-weight: 600;
+        color: #3f3f46;
+        margin-bottom: 0.5rem;
+    }
+
+    /* 토글/슬라이더 라벨 */
+    [data-testid="stSidebar"] label {
+        font-size: 0.82rem !important;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -143,13 +272,13 @@ def get_skill_registry(_db: Database) -> SkillRegistry:
 
 
 db = get_db()
-seed_default_styles(db)  # DB에 기본 스타일 시드
+seed_default_styles(db)
 registry = get_skill_registry(db)
 
-# ─── 자동 크롤링 (DB 비어있으면 첫 실행 시 자동으로 블로그 글 수집) ───
+# ─── 자동 크롤링 ───
 if db.count_blog_posts() == 0:
     from naverblog.crawler import crawl_blog
-    with st.spinner("첫 실행: 보보쌤 블로그 글 50개를 수집하고 있습니다... (약 30초)"):
+    with st.spinner("첫 실행: 보보쌤 블로그 글 50개를 수집하고 있습니다..."):
         result = crawl_blog(db)
     if result["success"] > 0:
         st.toast(f"블로그 글 {result['success']}개 자동 수집 완료!", icon="✅")
@@ -161,22 +290,24 @@ if db.count_blog_posts() == 0:
 # 사이드바
 # ═══════════════════════════════════════
 with st.sidebar:
-    st.markdown("## ⚙️ 설정")
+    st.markdown("## ✍️ 글 설정")
 
-    # ─ 글 생성 모델 ─
+    # ─ 모델 ─
+    st.markdown('<p class="sidebar-section-label">AI 모델</p>', unsafe_allow_html=True)
     model_names = list_model_names()
     selected_model = st.selectbox(
-        "AI 모델 (글 생성)", model_names, index=0,
+        "AI 모델", model_names, index=0, label_visibility="collapsed",
         help="글을 생성할 AI 모델. Claude가 한국어 품질이 가장 좋습니다.",
     )
 
-    st.divider()
+    st.markdown("")
 
-    # ─ 블로그 카테고리 ─
+    # ─ 카테고리 ─
+    st.markdown('<p class="sidebar-section-label">카테고리</p>', unsafe_allow_html=True)
     db_categories = get_available_categories(db)
-    category_options = ["(선택 안함)"] + (db_categories or AVAILABLE_CATEGORIES) + ["직접 입력"]
+    category_options = ["선택 안함"] + (db_categories or AVAILABLE_CATEGORIES) + ["직접 입력"]
     selected_category_label = st.selectbox(
-        "블로그 카테고리", category_options, index=0,
+        "블로그 카테고리", category_options, index=0, label_visibility="collapsed",
         help="카테고리 선택 시 해당 문체/구조 + 추천 스킬이 자동 적용됩니다",
     )
     custom_category = ""
@@ -184,7 +315,7 @@ with st.sidebar:
         custom_category = st.text_input("카테고리 이름", placeholder="예: 의대 입시 전략")
     selected_category = (
         custom_category if selected_category_label == "직접 입력"
-        else "" if selected_category_label == "(선택 안함)"
+        else "" if selected_category_label == "선택 안함"
         else selected_category_label
     )
 
@@ -195,59 +326,60 @@ with st.sidebar:
             unsafe_allow_html=True,
         )
 
-    st.divider()
+    st.markdown("")
 
     # ─ 페르소나 ─
+    st.markdown('<p class="sidebar-section-label">대상 독자</p>', unsafe_allow_html=True)
     personas = db.list_personas()
     persona_names = [p.name for p in personas] + ["직접 입력"]
     selected_persona_name = st.selectbox(
-        "대상 독자", persona_names, index=0, help="글의 대상 독자층",
+        "대상 독자", persona_names, index=0, label_visibility="collapsed",
+        help="글의 대상 독자층",
     )
     custom_persona_text = ""
     if selected_persona_name == "직접 입력":
         custom_persona_text = st.text_input("독자 설명", placeholder="예: IT에 관심 있는 50대 남성")
 
-    st.divider()
+    st.markdown("")
 
     # ─ 글 유형 ─
+    st.markdown('<p class="sidebar-section-label">글 유형</p>', unsafe_allow_html=True)
     post_type_options = {
         "일반 정보": PostType.GENERAL,
         "리뷰": PostType.REVIEW,
         "리스트형": PostType.LISTICLE,
     }
-    selected_type_label = st.selectbox("글 유형", list(post_type_options.keys()))
+    selected_type_label = st.selectbox(
+        "글 유형", list(post_type_options.keys()), label_visibility="collapsed",
+    )
     selected_post_type = post_type_options[selected_type_label]
 
     st.divider()
 
-    # ─ 스킬 토글 ─
-    st.markdown("### 🧩 스킬 설정")
+    # ─ 스킬 ─
+    st.markdown("### 스킬")
     if preset:
-        st.caption("카테고리 추천값 적용됨 (변경 가능)")
+        st.caption("카테고리 추천값 적용됨")
 
     default_search = preset["search"] if preset else True
     default_style = preset["blog_style"] if preset else True
     default_ref = preset.get("reference_posts", True) if preset else True
 
-    use_search = st.toggle("🔍 웹 검색 (최신 정보)", value=default_search)
-    use_blog_style = st.toggle("📝 보보쌤 스타일 적용", value=default_style)
+    use_search = st.toggle("웹 검색", value=default_search, help="Tavily API로 최신 정보 검색")
+    use_blog_style = st.toggle("보보쌤 스타일", value=default_style, help="카테고리별 문체/구조 적용")
     use_ref_posts = st.toggle(
-        "📖 기존 글 참조",
-        value=default_ref,
-        help=f"보보쌤의 실제 블로그 글 {db.count_blog_posts()}개를 참조하여 문체를 더 정확하게 재현",
+        "기존 글 참조", value=default_ref,
+        help=f"보보쌤 블로그 글 {db.count_blog_posts()}개를 참조",
     )
 
     ref_post_count = 3
     if use_ref_posts:
         total_posts = db.count_blog_posts()
         ref_post_count = st.slider(
-            "참조할 글 수",
-            min_value=1,
+            "참조할 글 수", min_value=1,
             max_value=total_posts if total_posts > 0 else 50,
             value=3,
-            help="많이 넣을수록 문체를 정확하게 따라하지만 비용이 증가합니다",
         )
-        # 토큰 예상 (글당 평균 글자수 기반)
         if ref_post_count <= 3:
             est_chars = ref_post_count * 3000
         elif ref_post_count <= 10:
@@ -262,13 +394,10 @@ with st.sidebar:
 
     st.divider()
 
-    # ─ 비용 안내 ─
-    with st.expander("💰 비용 안내"):
+    with st.expander("비용 안내"):
         st.markdown("""
-**글 생성** (1회, ~2000자)
-
-| 모델 | 비용 |
-|------|------|
+| 모델 | 비용/회 |
+|------|---------|
 | Claude Sonnet | ~25원 |
 | Claude Haiku | ~7원 |
 | GPT-4o | ~40원 |
@@ -276,48 +405,44 @@ with st.sidebar:
 | Gemini Pro | ~25원 |
 | Gemini Flash | ~7원 |
 
-**이미지 생성** (1장): ~13~25원
-**웹 검색**: Tavily 무료 1000회/월
+이미지 1장: ~13~25원 · 웹 검색: 무료 1000회/월
         """)
 
-    with st.expander("🔑 API 키 설정"):
-        st.markdown("""
-`.env` 파일에 설정:
-```
-ANTHROPIC_API_KEY=sk-ant-...
-OPENAI_API_KEY=sk-...
-GEMINI_API_KEY=AI...
-TAVILY_API_KEY=tvly-...
-```
-        """)
-
-    st.markdown("---")
-    st.markdown(
-        '<p style="text-align:center; color:#a78bfa; font-size:0.75rem;">'
-        "👸 보윤공주 & 보윤 빗취가 응원해요!</p>",
-        unsafe_allow_html=True,
-    )
+    with st.expander("API 키 설정"):
+        st.code(
+            "ANTHROPIC_API_KEY=sk-ant-...\n"
+            "OPENAI_API_KEY=sk-...\n"
+            "GEMINI_API_KEY=AI...\n"
+            "TAVILY_API_KEY=tvly-...",
+            language="bash",
+        )
 
 
 # ═══════════════════════════════════════
 # 메인 영역
 # ═══════════════════════════════════════
-st.markdown("""
-<div class="main-header">
-    <h1>✍️ 보보쌤 블로그 글 생성기</h1>
-    <p>주제를 입력하면 보보쌤 스타일로 네이버 블로그 글을 자동 생성합니다</p>
-    <span class="boyun-badge">👸 보윤공주 에디션</span>
+
+# ─── 헤더 ───
+st.markdown(f"""
+<div class="hero">
+    <h1>보보쌤 블로그 글 생성기</h1>
+    <p class="subtitle">주제를 입력하면 보보쌤 스타일로 네이버 블로그 글을 자동 생성합니다</p>
+    <div class="meta">
+        <span class="badge">v{__version__}</span>
+        <span class="badge">👸 보윤공주 에디션</span>
+        <span class="love">자기 사랑해 💕</span>
+    </div>
 </div>
 """, unsafe_allow_html=True)
 
-# ─── 이미지 설정 (선택사항, form 바깥) ───
-with st.expander("🖼️ 이미지 설정 (선택)", expanded=False):
+# ─── 이미지 설정 ───
+with st.expander("🖼️ 이미지 설정", expanded=False):
     default_image = preset["image_gen"] if preset else False
 
     img_col1, img_col2 = st.columns(2)
 
     with img_col1:
-        st.markdown("##### 📎 내 이미지 업로드")
+        st.markdown("**내 이미지 업로드**")
         uploaded_files = st.file_uploader(
             "이미지 파일 선택",
             type=["png", "jpg", "jpeg", "webp"],
@@ -336,13 +461,13 @@ with st.expander("🖼️ 이미지 설정 (선택)", expanded=False):
             )
             st.markdown("""
 <div class="image-placement-hint">
-💡 <b>팁</b>: 글 생성 후 미리보기에서 [이미지 1], [이미지 2] 위치를 확인하세요.
+💡 글 생성 후 미리보기에서 [이미지 1], [이미지 2] 위치를 확인하세요.
 네이버 에디터에서 해당 위치에 이미지를 직접 삽입하면 됩니다.
 </div>
             """, unsafe_allow_html=True)
 
     with img_col2:
-        st.markdown("##### 🎨 AI 이미지 생성")
+        st.markdown("**AI 이미지 생성**")
         use_image_gen = st.toggle("AI로 이미지 생성하기", value=default_image)
         if use_image_gen:
             image_model_names = list_image_model_names()
@@ -356,20 +481,20 @@ with st.expander("🖼️ 이미지 설정 (선택)", expanded=False):
             num_images = 2
 
 
-# ─── 입력 폼 (st.form으로 한글 입력 깨짐 해결) ───
+# ─── 입력 폼 ───
 with st.form("generate_form"):
     topic = st.text_area(
-        "📌 블로그 주제",
+        "블로그 주제",
         placeholder="예: 독학재수 3개월 수능 국어 공부법, 에어팟 프로 2 솔직 리뷰",
         height=68,
     )
     extra = st.text_area(
-        "📝 추가 지시사항 (선택)",
+        "추가 지시사항 (선택)",
         placeholder="예: 가성비 위주로 작성해줘, 구체적인 교재 추천 포함",
         height=68,
     )
     submitted = st.form_submit_button(
-        "🚀 블로그 글 생성하기",
+        "블로그 글 생성하기",
         type="primary",
         use_container_width=True,
     )
@@ -386,7 +511,9 @@ if submitted and topic.strip():
             name="커스텀",
             description=custom_persona_text,
             system_prompt=(
-                f"당신은 다음 대상을 위한 네이버 블로그 전문가입니다: {custom_persona_text}. "
+                f"당신은 '보보쌤'입니다. 서울대를 졸업하고 직장 생활을 하다가 77일 만에 의대에 합격한 "
+                f"20대 중후반 여성 입시 전문가입니다.\n\n"
+                f"다음 대상을 위해 블로그 글을 작성합니다: {custom_persona_text}. "
                 "이 독자층에 맞는 문체, 어휘, 톤으로 작성합니다."
             ),
         )
@@ -407,7 +534,7 @@ if submitted and topic.strip():
     else:
         registry.enable("reference_posts")
 
-    # 이미지 배치 지시를 extra_instructions에 추가
+    # 이미지 배치 지시
     full_extra = extra or ""
     if uploaded_files and image_instructions:
         img_list = "\n".join(
@@ -432,7 +559,7 @@ if submitted and topic.strip():
         )
 
     # ── 글 생성 ──
-    with st.spinner("블로그 글을 생성하고 있습니다... ✨ (30초~1분 소요)"):
+    with st.spinner("블로그 글을 생성하고 있습니다... (30초~1분)"):
         try:
             generation = run_pipeline(
                 topic=topic.strip(),
@@ -453,7 +580,7 @@ if submitted and topic.strip():
     # ── AI 이미지 생성 ──
     generated_images = []
     if use_image_gen:
-        with st.spinner("보윤공주가 이미지를 그리고 있어요... 🎨"):
+        with st.spinner("이미지를 생성하고 있습니다..."):
             try:
                 image_model_id = get_image_model_id(selected_image_model_name)
                 generated_images = generate_blog_images(
@@ -464,23 +591,24 @@ if submitted and topic.strip():
             except Exception as e:
                 st.warning(f"이미지 생성 실패: {e}")
 
-    # ── 결과 표시 ──
-    st.success(f"생성 완료! (ID: #{generation.id})")
+    # ── 결과 ──
+    st.markdown(
+        f'<div class="result-success">생성 완료 · ID #{generation.id} · {selected_model}</div>',
+        unsafe_allow_html=True,
+    )
 
-    # 탭 구성
-    tab_names = ["📖 미리보기", "📋 HTML (복사용)", "📝 Markdown"]
+    # 탭
+    tab_names = ["미리보기", "HTML 복사", "Markdown"]
     has_any_images = bool(generated_images) or bool(uploaded_files)
     if has_any_images:
-        tab_names.append("🖼️ 이미지")
-    tab_names.append("📊 참조 데이터")
-    tab_names.append("🔧 프롬프트")
+        tab_names.append("이미지")
+    tab_names.append("참조 데이터")
+    tab_names.append("프롬프트")
 
     tabs = st.tabs(tab_names)
     tab_idx = 0
 
-    # 미리보기
     with tabs[tab_idx]:
-        # 업로드 이미지 + AI 이미지 모두 표시
         if generated_images:
             st.image(
                 generated_images[0].data,
@@ -496,52 +624,46 @@ if submitted and topic.strip():
         st.markdown(generation.output_markdown)
     tab_idx += 1
 
-    # HTML
     with tabs[tab_idx]:
-        st.markdown("##### 아래 HTML을 복사 → 네이버 에디터 → HTML 모드에 붙여넣기")
+        st.caption("아래 HTML을 복사해서 네이버 에디터의 HTML 모드에 붙여넣으세요")
         st.code(generation.output_html, language="html")
     tab_idx += 1
 
-    # Markdown
     with tabs[tab_idx]:
-        st.markdown("##### Markdown 원문")
+        st.caption("Markdown 원문")
         st.code(generation.output_markdown, language="markdown")
     tab_idx += 1
 
-    # 이미지 탭
     if has_any_images:
         with tabs[tab_idx]:
-            st.markdown("##### 블로그에 사용할 이미지")
             st.caption(
-                "네이버 블로그 에디터에서 '사진' 버튼으로 이미지를 업로드하세요. "
-                "글에서 [이미지 N] 마커가 있는 위치에 삽입하면 됩니다."
+                "네이버 블로그 에디터에서 '사진' 버튼으로 업로드하세요. "
+                "[이미지 N] 마커 위치에 삽입하면 됩니다."
             )
 
-            # 업로드 이미지
             if uploaded_files:
-                st.markdown("**📎 업로드한 이미지**")
+                st.markdown("**업로드한 이미지**")
                 upload_cols = st.columns(min(len(uploaded_files), 3))
                 for idx, f in enumerate(uploaded_files):
                     with upload_cols[idx % 3]:
                         st.image(f, caption=f"[이미지 {idx + 1}] {f.name}", use_container_width=True)
                         st.download_button(
-                            f"💾 다운로드 ({idx + 1})",
+                            f"다운로드 ({idx + 1})",
                             data=f.getvalue(),
                             file_name=f.name,
                             mime=f.type,
                             key=f"dl_upload_{idx}",
                         )
 
-            # AI 생성 이미지
             if generated_images:
-                st.markdown("**🎨 AI 생성 이미지**")
+                st.markdown("**AI 생성 이미지**")
                 gen_cols = st.columns(min(len(generated_images), 3))
                 for idx, img in enumerate(generated_images):
                     with gen_cols[idx % 3]:
                         label = ["대표 (썸네일)", "본문 삽입용", "추가", "추가"][idx]
                         st.image(img.data, caption=f"{idx + 1}. {label}", use_container_width=True)
                         st.download_button(
-                            f"💾 다운로드 ({idx + 1})",
+                            f"다운로드 ({idx + 1})",
                             data=img.data,
                             file_name=f"ai_image_{idx + 1}.png",
                             mime="image/png",
@@ -551,14 +673,11 @@ if submitted and topic.strip():
                             st.caption(img.prompt)
         tab_idx += 1
 
-    # 참조 데이터
     with tabs[tab_idx]:
-        st.markdown("##### AI에게 전달된 참조 데이터")
         st.caption("글 생성 시 LLM에게 주입된 컨텍스트를 확인합니다.")
 
-        # 스타일 가이드 데이터
         if use_blog_style:
-            with st.expander("📝 스타일 가이드", expanded=False):
+            with st.expander("스타일 가이드", expanded=False):
                 prompt_text = generation.prompt_used
                 style_start = prompt_text.find("## 블로그 스타일 가이드")
                 if style_start >= 0:
@@ -569,9 +688,8 @@ if submitted and topic.strip():
                 else:
                     st.info("스타일 가이드 데이터 없음")
 
-        # 레퍼런스 글 데이터
         if use_ref_posts:
-            with st.expander(f"📖 레퍼런스 글 ({ref_post_count}개)", expanded=True):
+            with st.expander(f"레퍼런스 글 ({ref_post_count}개)", expanded=True):
                 prompt_text = generation.prompt_used
                 ref_start = prompt_text.find("## 보보쌤 기존 블로그 글 레퍼런스")
                 if ref_start >= 0:
@@ -584,9 +702,8 @@ if submitted and topic.strip():
                 else:
                     st.info("레퍼런스 글 데이터 없음")
 
-        # 검색 데이터
         if use_search:
-            with st.expander("🔍 웹 검색 결과", expanded=False):
+            with st.expander("웹 검색 결과", expanded=False):
                 prompt_text = generation.prompt_used
                 search_start = prompt_text.find("## 참고할 최신 정보")
                 if search_start >= 0:
@@ -597,14 +714,12 @@ if submitted and topic.strip():
                 else:
                     st.info("검색 데이터 없음")
 
-        # 전체 프롬프트 길이 요약
         total_len = len(generation.prompt_used)
         st.metric("전체 프롬프트 길이", f"{total_len:,}자 (~{total_len//4:,} 토큰)")
     tab_idx += 1
 
-    # 프롬프트
     with tabs[tab_idx]:
-        st.caption("AI에게 전달된 전체 프롬프트 (디버깅/확인용)")
+        st.caption("AI에게 전달된 전체 프롬프트 (디버깅용)")
         st.text(generation.prompt_used)
 
 elif submitted:
@@ -613,7 +728,7 @@ elif submitted:
 st.divider()
 
 # ─── 이전 생성 기록 ───
-st.markdown("### 📚 이전 생성 기록")
+st.markdown('<p class="history-label">이전 생성 기록</p>', unsafe_allow_html=True)
 
 history = db.list_generations(limit=10)
 
@@ -632,12 +747,12 @@ else:
                 st.code(gen.output_html, language="html")
 
 # ─── 푸터 ───
-st.divider()
-st.markdown("""
-<div class="boyun-footer">
-    Made with Streamlit + LiteLLM + Imagen · 보보쌤 블로그 스타일 기반<br>
-    <span class="highlight">👸 보윤공주</span> · <span class="highlight">보윤 빗취</span> · with love 💜<br>
-    <span style="font-size:0.7rem; color:#d4a5e5;">자기 사랑해 💕</span><br>
-    <span style="font-size:0.65rem; color:#c0c0c0;">v0.1.0</span>
+st.markdown("")
+st.markdown(f"""
+<div class="app-footer">
+    보보쌤 블로그 스타일 기반 · Streamlit + LiteLLM + Imagen<br>
+    👸 <span class="love-msg">보윤공주</span> · <span class="love-msg">보윤 빗취</span><br>
+    <span class="love-msg">자기 사랑해 💕</span><br>
+    <span class="ver">v{__version__}</span>
 </div>
 """, unsafe_allow_html=True)

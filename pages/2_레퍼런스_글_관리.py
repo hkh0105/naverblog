@@ -23,6 +23,23 @@ st.set_page_config(
     layout="wide",
 )
 
+st.markdown("""
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;600;700&display=swap');
+    html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; }
+    .block-container { max-width: 960px; padding-top: 1.5rem; }
+    .page-header {
+        background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #c4b5fd 100%);
+        padding: 2rem 2.5rem;
+        border-radius: 1.25rem;
+        color: white;
+        margin-bottom: 2rem;
+    }
+    .page-header h1 { color: white !important; font-size: 1.5rem; font-weight: 700; margin: 0 0 0.3rem 0; }
+    .page-header p { color: rgba(255,255,255,0.85); font-size: 0.88rem; margin: 0; font-weight: 300; }
+</style>
+""", unsafe_allow_html=True)
+
 
 @st.cache_resource
 def get_db() -> Database:
@@ -31,14 +48,10 @@ def get_db() -> Database:
 
 db = get_db()
 
-# ─── 헤더 ───
 st.markdown("""
-<div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-     padding: 1.5rem; border-radius: 1rem; color: white; margin-bottom: 1.5rem;">
-    <h1 style="color: white; margin: 0; font-size: 1.8rem;">📖 레퍼런스 글 관리</h1>
-    <p style="color: rgba(255,255,255,0.85); margin: 0.5rem 0 0 0;">
-        보보쌤 블로그에서 크롤링한 글을 확인하고 관리합니다. 이 글들이 새 글 생성 시 참조됩니다.
-    </p>
+<div class="page-header">
+    <h1>레퍼런스 글 관리</h1>
+    <p>보보쌤 블로그에서 크롤링한 글을 확인하고 관리합니다. 이 글들이 새 글 생성 시 참조됩니다.</p>
 </div>
 """, unsafe_allow_html=True)
 
