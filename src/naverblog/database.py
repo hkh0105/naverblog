@@ -84,10 +84,19 @@ class Database:
         if not presets_file.exists():
             return
         presets = json.loads(presets_file.read_text(encoding="utf-8"))
+        preset_names = {p["name"] for p in presets}
         with self._get_conn() as conn:
+            # 기존 프리셋 중 JSON에 없는 것 삭제
+            conn.execute(
+                "DELETE FROM personas WHERE is_preset = 1 AND name NOT IN ({})".format(
+                    ",".join("?" for _ in preset_names)
+                ),
+                list(preset_names),
+            )
+            # 프리셋 upsert
             for p in presets:
                 conn.execute(
-                    "INSERT OR IGNORE INTO personas (name, description, system_prompt, is_preset) "
+                    "INSERT OR REPLACE INTO personas (name, description, system_prompt, is_preset) "
                     "VALUES (?, ?, ?, 1)",
                     (p["name"], p["description"], p["system_prompt"]),
                 )
