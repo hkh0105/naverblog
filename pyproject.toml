@@ -1,0 +1,23 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "naverblog-cli"
+version = "0.1.0"
+description = "네이버 블로그 포스트 생성 도구"
+requires-python = ">=3.11"
+dependencies = [
+    "streamlit>=1.30.0",
+    "litellm>=1.40.0",
+    "pydantic>=2.0",
+    "jinja2>=3.1",
+    "tavily-python>=0.3.0",
+    "python-dotenv>=1.0",
+    "markdown>=3.5",
+    "google-genai>=1.0.0",
+    "Pillow>=10.0",
+]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/naverblog"]

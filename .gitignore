@@ -1,0 +1,32 @@
+# API keys - NEVER commit
+.env
+.env.local
+.env.production
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.venv/
+venv/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Database
+*.db
+
+# Streamlit
+.streamlit/secrets.toml
+
+# Generated images
+generated_images/
+*.png

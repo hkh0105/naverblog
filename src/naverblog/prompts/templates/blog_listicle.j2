@@ -1,0 +1,39 @@
+다음 주제로 네이버 블로그 리스트형 포스트를 작성해주세요.
+
+## 주제
+{{ topic }}
+
+{% if skill_results.get("blog_style") %}
+## 블로그 스타일 가이드
+아래 스타일 가이드를 **반드시** 따라서 작성해주세요. 인사말, 문체, 구조, 마무리 등 모든 요소를 가이드에 맞춰주세요.
+
+{{ skill_results["blog_style"].summary }}
+{% endif %}
+
+{% if skill_results.get("reference_posts") %}
+## 보보쌤 기존 글 레퍼런스
+아래는 보보쌤이 실제로 작성한 블로그 글입니다. 이 글들의 문체, 어투, 구조, 표현 방식을 최대한 따라해주세요.
+
+{{ skill_results["reference_posts"].summary }}
+{% endif %}
+
+{% if skill_results.get("search") %}
+## 참고할 최신 정보
+{{ skill_results["search"].summary }}
+{% endif %}
+
+## 리스트형 구성
+- 5~10개 항목으로 구성
+- 각 항목에 소제목과 간단한 설명
+- 순위 또는 추천도 표시 (선택)
+- 각 항목 끝에 핵심 한줄 요약
+
+{% if extra_instructions %}
+## 추가 지시사항
+{{ extra_instructions }}
+{% endif %}
+
+## 요청사항
+- 한눈에 훑어보기 좋은 구성
+- 각 항목은 독립적으로 읽을 수 있게
+- 1500~2500자 분량
