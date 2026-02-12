@@ -96,9 +96,9 @@ with col2:
 
 col3, col4, col5 = st.columns(3)
 with col3:
-    wm_opacity = st.slider("투명도", 1, 100, 5, step=1, help="낮을수록 투명, 높을수록 진하게")
+    wm_opacity = st.slider("투명도", 1, 100, 15, step=1, help="낮을수록 투명, 높을수록 진하게")
 with col4:
-    wm_font_size = st.slider("글자 크기", 10, 200, 50, step=5)
+    wm_font_size = st.slider("글자 크기", 10, 200, 40, step=5)
 with col5:
     wm_rotation = st.slider("회전 각도", 0, 90, 30, step=5, help="대각선 모드에서 사용")
 

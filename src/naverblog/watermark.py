@@ -139,28 +139,42 @@ def _draw_diagonal(
     tiled: bool,
 ) -> None:
     """대각선 워터마크 (1줄 또는 반복 타일)."""
+    import math
+
     w, h = overlay.size
     tmp = ImageDraw.Draw(overlay)
     bbox = tmp.textbbox((0, 0), text, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
 
     if tiled:
-        spacing_x = tw + 80
-        spacing_y = th + 120
-        for yi in range(-h, h * 2, spacing_y):
-            for xi in range(-w, w * 2, spacing_x):
-                txt_img = Image.new("RGBA", (tw + 20, th + 20), (0, 0, 0, 0))
-                txt_draw = ImageDraw.Draw(txt_img)
-                txt_draw.text((10, 10), text, font=font, fill=fill)
-                txt_rotated = txt_img.rotate(rotation, expand=True, fillcolor=(0, 0, 0, 0))
-                if 0 <= xi < w and 0 <= yi < h:
-                    overlay.paste(txt_rotated, (xi, yi), txt_rotated)
+        # 큰 캔버스에 텍스트 타일링 후 전체 회전
+        diag = int(math.sqrt(w * w + h * h))
+        big = Image.new("RGBA", (diag * 2, diag * 2), (0, 0, 0, 0))
+        big_draw = ImageDraw.Draw(big)
+        gap_x = max(tw + 60, int(tw * 1.3))
+        gap_y = th + 80
+        for y in range(0, diag * 2, gap_y):
+            for x in range(0, diag * 2, gap_x):
+                big_draw.text((x, y), text, font=font, fill=fill)
+        big_rotated = big.rotate(rotation, expand=False, fillcolor=(0, 0, 0, 0))
+        # 중앙 크롭
+        bw, bh = big_rotated.size
+        cx, cy = bw // 2, bh // 2
+        crop = big_rotated.crop((cx - w // 2, cy - h // 2, cx + w // 2, cy + h // 2))
+        overlay.paste(crop, (0, 0), crop)
     else:
         txt_img = Image.new("RGBA", (tw + 40, th + 40), (0, 0, 0, 0))
         txt_draw = ImageDraw.Draw(txt_img)
         txt_draw.text((20, 20), text, font=font, fill=fill)
         txt_rotated = txt_img.rotate(rotation, expand=True, fillcolor=(0, 0, 0, 0))
         rw, rh = txt_rotated.size
+        # 텍스트가 이미지보다 크면 축소
+        if rw > w * 0.95 or rh > h * 0.95:
+            scale = min(w / rw, h / rh) * 0.85
+            txt_rotated = txt_rotated.resize(
+                (int(rw * scale), int(rh * scale)), Image.LANCZOS
+            )
+            rw, rh = txt_rotated.size
         overlay.paste(txt_rotated, ((w - rw) // 2, (h - rh) // 2), txt_rotated)
 
 
