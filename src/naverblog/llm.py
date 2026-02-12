@@ -5,6 +5,8 @@ from __future__ import annotations
 from litellm import completion
 
 MODEL_REGISTRY: dict[str, str] = {
+    "Claude Opus 4.6": "claude-opus-4-6",
+    "Claude Opus 4.5": "claude-opus-4-20250514",
     "Claude Sonnet": "claude-sonnet-4-20250514",
     "Claude Haiku": "claude-haiku-4-20250414",
     "GPT-4o": "gpt-4o",
