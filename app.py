@@ -143,6 +143,16 @@ db = get_db()
 seed_default_styles(db)  # DB에 기본 스타일 시드
 registry = get_skill_registry(db)
 
+# ─── 자동 크롤링 (DB 비어있으면 첫 실행 시 자동으로 블로그 글 수집) ───
+if db.count_blog_posts() == 0:
+    from naverblog.crawler import crawl_blog
+    with st.spinner("첫 실행: 보보쌤 블로그 글 50개를 수집하고 있습니다... (약 30초)"):
+        result = crawl_blog(db)
+    if result["success"] > 0:
+        st.toast(f"블로그 글 {result['success']}개 자동 수집 완료!", icon="✅")
+        st.cache_resource.clear()
+        st.rerun()
+
 
 # ═══════════════════════════════════════
 # 사이드바
@@ -231,20 +241,21 @@ with st.sidebar:
             "참조할 글 수",
             min_value=1,
             max_value=total_posts if total_posts > 0 else 50,
-            value=min(total_posts, 50) if total_posts > 0 else 3,
-            help="전체를 넣으면 문체를 더 정확하게 따라하지만 비용이 증가합니다",
+            value=3,
+            help="많이 넣을수록 문체를 정확하게 따라하지만 비용이 증가합니다",
         )
-        # 토큰 예상
+        # 토큰 예상 (글당 평균 글자수 기반)
         if ref_post_count <= 3:
-            est_tokens = ref_post_count * 750
+            est_chars = ref_post_count * 3000
         elif ref_post_count <= 10:
-            est_tokens = ref_post_count * 500
+            est_chars = ref_post_count * 2000
         elif ref_post_count <= 20:
-            est_tokens = ref_post_count * 375
+            est_chars = ref_post_count * 1500
         else:
-            est_tokens = ref_post_count * 250
-        est_cost_krw = int(est_tokens * 0.003 * 1450)  # ~$3/M tokens * KRW
-        st.caption(f"예상 토큰: ~{est_tokens:,} ({est_cost_krw}원 추가)")
+            est_chars = ref_post_count * 1000
+        est_tokens = est_chars // 4
+        est_cost_krw = max(1, int(est_tokens * 3 / 1000000 * 1450))
+        st.caption(f"~{est_tokens:,} 토큰 (+{est_cost_krw}원)")
 
     st.divider()
 
