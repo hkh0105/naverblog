@@ -12,8 +12,8 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from naverblog.config import inject_default_keys
-inject_default_keys()
+from naverblog.config import inject_secrets
+inject_secrets()
 
 from naverblog.database import Database
 
