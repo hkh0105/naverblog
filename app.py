@@ -27,7 +27,7 @@ from naverblog.pipeline import run_pipeline
 from naverblog.skills import SkillRegistry
 from naverblog.skills.blog_style import AVAILABLE_CATEGORIES, get_available_categories, seed_default_styles
 
-__version__ = "0.1.0"
+__version__ = "0.2.0"
 
 # ─── 카테고리별 스킬 프리셋 ───
 CATEGORY_SKILL_PRESETS: dict[str, dict] = {
@@ -480,6 +480,12 @@ with st.expander("🖼️ 이미지 설정", expanded=False):
             selected_image_model_name = "Imagen 3"
             num_images = 2
 
+        st.markdown("**워터마크**")
+        use_watermark = st.toggle("이미지에 워터마크 넣기", value=False)
+        wm_text = "보보쌤 | byhur99"
+        if use_watermark:
+            wm_text = st.text_input("워터마크 텍스트", value=wm_text, key="main_wm_text")
+
 
 # ─── 입력 폼 ───
 with st.form("generate_form"):
@@ -646,12 +652,16 @@ if submitted and topic.strip():
                 upload_cols = st.columns(min(len(uploaded_files), 3))
                 for idx, f in enumerate(uploaded_files):
                     with upload_cols[idx % 3]:
-                        st.image(f, caption=f"[이미지 {idx + 1}] {f.name}", use_container_width=True)
+                        img_data = f.getvalue()
+                        if use_watermark:
+                            from naverblog.watermark import watermark_image
+                            img_data = watermark_image(img_data, text=wm_text)
+                        st.image(img_data, caption=f"[이미지 {idx + 1}] {f.name}", use_container_width=True)
                         st.download_button(
                             f"다운로드 ({idx + 1})",
-                            data=f.getvalue(),
-                            file_name=f.name,
-                            mime=f.type,
+                            data=img_data,
+                            file_name=f"wm_{f.name}" if use_watermark else f.name,
+                            mime="image/png" if use_watermark else f.type,
                             key=f"dl_upload_{idx}",
                         )
 
@@ -661,10 +671,14 @@ if submitted and topic.strip():
                 for idx, img in enumerate(generated_images):
                     with gen_cols[idx % 3]:
                         label = ["대표 (썸네일)", "본문 삽입용", "추가", "추가"][idx]
-                        st.image(img.data, caption=f"{idx + 1}. {label}", use_container_width=True)
+                        img_data = img.data
+                        if use_watermark:
+                            from naverblog.watermark import watermark_image
+                            img_data = watermark_image(img_data, text=wm_text)
+                        st.image(img_data, caption=f"{idx + 1}. {label}", use_container_width=True)
                         st.download_button(
                             f"다운로드 ({idx + 1})",
-                            data=img.data,
+                            data=img_data,
                             file_name=f"ai_image_{idx + 1}.png",
                             mime="image/png",
                             key=f"dl_gen_{idx}",

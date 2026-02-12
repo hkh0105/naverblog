@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "naverblog-cli"
-version = "0.1.0"
+version = "0.2.0"
 description = "네이버 블로그 포스트 생성 도구"
 requires-python = ">=3.11"
 dependencies = [
@@ -17,6 +17,7 @@ dependencies = [
     "markdown>=3.5",
     "google-genai>=1.0.0",
     "Pillow>=10.0",
+    "pypdf>=4.0",
 ]
 
 [tool.hatch.build.targets.wheel]
