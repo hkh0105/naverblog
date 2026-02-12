@@ -24,7 +24,7 @@ _FONT_SEARCH_PATHS = [
 
 
 def _find_korean_font(size: int = 24) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    """한국어 지원 폰트 탐색."""
+    """한국어 지원 폰트 탐색 (Pillow용)."""
     for path in _FONT_SEARCH_PATHS:
         if Path(path).exists():
             try:
@@ -40,6 +40,39 @@ def _hex_to_rgb(hex_color: str) -> tuple[int, int, int]:
     return tuple(int(hex_color[i : i + 2], 16) for i in (0, 2, 4))
 
 
+# ─── reportlab 한국어 폰트 등록 ───
+
+_RL_FONT_NAME: str | None = None
+
+
+def _get_reportlab_font() -> str:
+    """reportlab용 한국어 폰트 등록 후 폰트 이름 반환."""
+    global _RL_FONT_NAME
+    if _RL_FONT_NAME is not None:
+        return _RL_FONT_NAME
+
+    from reportlab.pdfbase import pdfmetrics
+    from reportlab.pdfbase.ttfonts import TTFont
+
+    for path in _FONT_SEARCH_PATHS:
+        if not Path(path).exists():
+            continue
+        # .ttc 파일: subfontIndex=0 시도
+        for idx in (0, None):
+            try:
+                if idx is not None:
+                    pdfmetrics.registerFont(TTFont("KoreanWM", path, subfontIndex=idx))
+                else:
+                    pdfmetrics.registerFont(TTFont("KoreanWM", path))
+                _RL_FONT_NAME = "KoreanWM"
+                return _RL_FONT_NAME
+            except Exception:
+                continue
+
+    _RL_FONT_NAME = "Helvetica"
+    return _RL_FONT_NAME
+
+
 # ─── 이미지 워터마크 ───
 
 def watermark_image(
@@ -52,21 +85,7 @@ def watermark_image(
     rotation: int = 30,
     bg_box: bool = True,
 ) -> bytes:
-    """이미지에 텍스트 워터마크 삽입.
-
-    Args:
-        image_data: 원본 이미지 바이트
-        text: 워터마크 텍스트 (줄바꿈 지원)
-        opacity: 불투명도 (0~255)
-        position: bottom-right, bottom-left, center, diagonal-single, diagonal-tiled
-        font_size: 폰트 크기 (0이면 이미지 크기에 맞게 자동 계산)
-        color: (R, G, B) 텍스트 색상
-        rotation: 대각선 회전 각도 (degrees)
-        bg_box: 코너/중앙 모드에서 배경 박스 표시 여부
-
-    Returns:
-        워터마크가 적용된 이미지 바이트 (PNG)
-    """
+    """이미지에 텍스트 워터마크 삽입."""
     img = Image.open(io.BytesIO(image_data)).convert("RGBA")
     w, h = img.size
 
@@ -76,7 +95,6 @@ def watermark_image(
 
     overlay = Image.new("RGBA", img.size, (0, 0, 0, 0))
     draw = ImageDraw.Draw(overlay)
-
     r, g, b = color
 
     if position in ("diagonal-tiled", "diagonal-single"):
@@ -122,8 +140,6 @@ def _draw_diagonal(
 ) -> None:
     """대각선 워터마크 (1줄 또는 반복 타일)."""
     w, h = overlay.size
-
-    # 텍스트 크기 측정
     tmp = ImageDraw.Draw(overlay)
     bbox = tmp.textbbox((0, 0), text, font=font)
     tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
@@ -140,18 +156,15 @@ def _draw_diagonal(
                 if 0 <= xi < w and 0 <= yi < h:
                     overlay.paste(txt_rotated, (xi, yi), txt_rotated)
     else:
-        # 1줄 대각선 - 이미지 중앙에 큰 텍스트 하나
         txt_img = Image.new("RGBA", (tw + 40, th + 40), (0, 0, 0, 0))
         txt_draw = ImageDraw.Draw(txt_img)
         txt_draw.text((20, 20), text, font=font, fill=fill)
         txt_rotated = txt_img.rotate(rotation, expand=True, fillcolor=(0, 0, 0, 0))
         rw, rh = txt_rotated.size
-        x = (w - rw) // 2
-        y = (h - rh) // 2
-        overlay.paste(txt_rotated, (x, y), txt_rotated)
+        overlay.paste(txt_rotated, ((w - rw) // 2, (h - rh) // 2), txt_rotated)
 
 
-# ─── PDF 워터마크 ───
+# ─── PDF 워터마크 (reportlab으로 투명 오버레이 생성) ───
 
 def watermark_pdf(
     pdf_data: bytes,
@@ -162,67 +175,71 @@ def watermark_pdf(
     color: tuple[int, int, int] = (128, 128, 128),
     rotation: int = 30,
 ) -> bytes:
-    """PDF 각 페이지에 워터마크 삽입.
-
-    Args:
-        pdf_data: 원본 PDF 바이트
-        text: 워터마크 텍스트
-        opacity: 불투명도 (0.0~1.0)
-        position: diagonal-tiled, diagonal-single, bottom-right, bottom-left, center, top-right, top-left
-        font_size: 폰트 크기
-        color: (R, G, B) 텍스트 색상
-        rotation: 대각선 회전 각도
-
-    Returns:
-        워터마크가 적용된 PDF 바이트
-    """
+    """PDF 각 페이지에 투명 워터마크 삽입 (원본 보존)."""
     from pypdf import PdfReader, PdfWriter
+    from reportlab.pdfgen import canvas as rl_canvas
+    from reportlab.lib.colors import Color
+
+    font_name = _get_reportlab_font()
 
     reader = PdfReader(io.BytesIO(pdf_data))
     writer = PdfWriter()
+
+    r_f, g_f, b_f = color[0] / 255, color[1] / 255, color[2] / 255
+    fill_color = Color(r_f, g_f, b_f, alpha=opacity)
 
     for page in reader.pages:
         media = page.mediabox
         pw = float(media.width)
         ph = float(media.height)
 
-        scale = 3
-        img_w, img_h = int(pw * scale), int(ph * scale)
-        wm_img = Image.new("RGBA", (img_w, img_h), (0, 0, 0, 0))
+        # reportlab으로 투명 워터마크 PDF 페이지 생성
+        wm_buf = io.BytesIO()
+        c = rl_canvas.Canvas(wm_buf, pagesize=(pw, ph))
+        c.setFillColor(fill_color)
+        c.setFont(font_name, font_size)
 
-        font = _find_korean_font(font_size * scale)
-        alpha = int(255 * opacity)
-        r, g, b = color
-        fill = (r, g, b, alpha)
+        if position == "diagonal-tiled":
+            text_w = c.stringWidth(text, font_name, font_size)
+            sp_x = int(text_w + 60)
+            sp_y = int(font_size + 80)
+            for y in range(-int(ph), int(ph) * 2, sp_y):
+                for x in range(-int(pw), int(pw) * 2, sp_x):
+                    c.saveState()
+                    c.translate(x, y)
+                    c.rotate(rotation)
+                    c.drawString(0, 0, text)
+                    c.restoreState()
 
-        if position in ("diagonal-tiled", "diagonal-single"):
-            _draw_diagonal(wm_img, text, font, fill, rotation, position == "diagonal-tiled")
-        else:
-            draw = ImageDraw.Draw(wm_img)
-            bbox = draw.textbbox((0, 0), text, font=font)
-            tw, th = bbox[2] - bbox[0], bbox[3] - bbox[1]
-            margin = 30 * scale
+        elif position == "diagonal-single":
+            c.saveState()
+            c.translate(pw / 2, ph / 2)
+            c.rotate(rotation)
+            c.drawCentredString(0, 0, text)
+            c.restoreState()
 
-            if position == "bottom-right":
-                x, y = img_w - tw - margin, img_h - th - margin
-            elif position == "bottom-left":
-                x, y = margin, img_h - th - margin
-            elif position == "top-right":
-                x, y = img_w - tw - margin, margin
-            elif position == "top-left":
-                x, y = margin, margin
-            else:  # center
-                x, y = (img_w - tw) // 2, (img_h - th) // 2
+        elif position == "center":
+            c.drawCentredString(pw / 2, ph / 2, text)
 
-            draw.text((x, y), text, font=font, fill=fill)
+        elif position == "bottom-right":
+            text_w = c.stringWidth(text, font_name, font_size)
+            c.drawString(pw - text_w - 30, 30, text)
 
-        # 워터마크 이미지를 PDF로 변환
-        wm_img_rgb = wm_img.convert("RGB")
-        wm_pdf_buf = io.BytesIO()
-        wm_img_rgb.save(wm_pdf_buf, format="PDF", resolution=72 * scale)
-        wm_pdf_buf.seek(0)
+        elif position == "bottom-left":
+            c.drawString(30, 30, text)
 
-        wm_reader = PdfReader(wm_pdf_buf)
+        elif position == "top-right":
+            text_w = c.stringWidth(text, font_name, font_size)
+            c.drawString(pw - text_w - 30, ph - font_size - 30, text)
+
+        elif position == "top-left":
+            c.drawString(30, ph - font_size - 30, text)
+
+        c.save()
+        wm_buf.seek(0)
+
+        # 투명 워터마크 PDF를 원본 위에 오버레이
+        wm_reader = PdfReader(wm_buf)
         wm_page = wm_reader.pages[0]
         page.merge_page(wm_page)
         writer.add_page(page)
