@@ -90,23 +90,23 @@ POSITION_OPTIONS = {
 
 col1, col2 = st.columns(2)
 with col1:
-    wm_text = st.text_area("워터마크 텍스트", value="의대 간 보보쌤의 공부 & 입시 연구소", height=68, help="여러 줄 입력 가능")
+    wm_text = st.text_area("워터마크 텍스트", value="의대 간 보보쌤의 공부 & 입시 연구소", height=68, help="여러 줄 입력 가능", key="wm_text_v2")
 with col2:
-    wm_position = st.selectbox("배치 스타일", list(POSITION_OPTIONS.keys()), index=1)
+    wm_position = st.selectbox("배치 스타일", list(POSITION_OPTIONS.keys()), index=1, key="wm_pos_v2")
 
 col3, col4, col5 = st.columns(3)
 with col3:
-    wm_opacity = st.slider("투명도", 1, 100, 15, step=1, help="낮을수록 투명, 높을수록 진하게")
+    wm_opacity = st.slider("투명도", 1, 100, 15, step=1, help="낮을수록 투명, 높을수록 진하게", key="wm_op_v2")
 with col4:
-    wm_font_size = st.slider("글자 크기", 10, 200, 40, step=5)
+    wm_font_size = st.slider("글자 크기", 10, 200, 40, step=5, key="wm_fs_v2")
 with col5:
-    wm_rotation = st.slider("회전 각도", 0, 90, 30, step=5, help="대각선 모드에서 사용")
+    wm_rotation = st.slider("회전 각도", 0, 90, 30, step=5, help="대각선 모드에서 사용", key="wm_rot_v2")
 
 col6, col7 = st.columns(2)
 with col6:
-    wm_color = st.color_picker("글자 색상", value="#FFFFFF")
+    wm_color = st.color_picker("글자 색상", value="#FFFFFF", key="wm_color_v2")
 with col7:
-    wm_bg_box = st.checkbox("배경 박스 표시", value=False, help="코너/중앙 모드에서 텍스트 뒤에 반투명 배경")
+    wm_bg_box = st.checkbox("배경 박스 표시", value=False, help="코너/중앙 모드에서 텍스트 뒤에 반투명 배경", key="wm_bg_v2")
 
 position_value = POSITION_OPTIONS[wm_position]
 color_rgb = _hex_to_rgb(wm_color)
