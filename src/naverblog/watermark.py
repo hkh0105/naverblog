@@ -10,35 +10,35 @@ from PIL import Image, ImageDraw, ImageFont
 
 # ─── 폰트 탐색 ───
 
+# 프로젝트에 번들된 폰트 (가장 우선)
+_BUNDLED_FONT = Path(__file__).parent.parent.parent / "assets" / "fonts" / "NotoSansKR.ttf"
+
 _FONT_SEARCH_PATHS = [
+    str(_BUNDLED_FONT),
     # macOS
     "/System/Library/Fonts/AppleSDGothicNeo.ttc",
     "/System/Library/Fonts/Supplemental/AppleGothic.ttf",
     "/Library/Fonts/AppleSDGothicNeo.ttc",
-    # Linux (Streamlit Cloud - packages.txt에서 fonts-noto-cjk 설치)
+    # Linux
     "/usr/share/fonts/opentype/noto/NotoSansCJK-Regular.ttc",
     "/usr/share/fonts/opentype/noto/NotoSansCJKkr-Regular.otf",
     "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc",
     "/usr/share/fonts/noto-cjk/NotoSansCJK-Regular.ttc",
-    "/usr/share/fonts/OTF/NotoSansCJK-Regular.ttc",
-    "/usr/share/fonts/truetype/NotoSansCJK-Regular.ttc",
 ]
 
 _CACHED_FONT_PATH: str | None = None
 
 
 def _find_korean_font(size: int = 24) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    """한국어 지원 폰트 탐색 (Pillow용)."""
+    """한국어 지원 폰트 탐색 (Pillow용). 번들 폰트 최우선."""
     global _CACHED_FONT_PATH
 
-    # 캐시된 경로가 있으면 바로 사용
     if _CACHED_FONT_PATH:
         try:
             return ImageFont.truetype(_CACHED_FONT_PATH, size)
         except Exception:
             _CACHED_FONT_PATH = None
 
-    # 1차: 알려진 경로 탐색
     for path in _FONT_SEARCH_PATHS:
         if Path(path).exists():
             try:
@@ -47,36 +47,6 @@ def _find_korean_font(size: int = 24) -> ImageFont.FreeTypeFont | ImageFont.Imag
                 return font
             except Exception:
                 continue
-
-    # 2차: fc-list로 한국어 폰트 동적 탐색
-    import subprocess
-    try:
-        result = subprocess.run(
-            ["fc-list", ":lang=ko", "file"],
-            capture_output=True, text=True, timeout=5,
-        )
-        for line in result.stdout.strip().split("\n"):
-            fpath = line.strip().rstrip(":")
-            if fpath and Path(fpath).exists():
-                try:
-                    font = ImageFont.truetype(fpath, size)
-                    _CACHED_FONT_PATH = fpath
-                    return font
-                except Exception:
-                    continue
-    except Exception:
-        pass
-
-    # 3차: /usr/share/fonts 전체에서 Noto CJK 검색
-    for fonts_dir in [Path("/usr/share/fonts"), Path("/usr/local/share/fonts")]:
-        if fonts_dir.exists():
-            for fpath in fonts_dir.rglob("*Noto*CJK*"):
-                try:
-                    font = ImageFont.truetype(str(fpath), size)
-                    _CACHED_FONT_PATH = str(fpath)
-                    return font
-                except Exception:
-                    continue
 
     return ImageFont.load_default()
 
