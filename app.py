@@ -636,6 +636,8 @@ st.divider()
 st.markdown("""
 <div class="boyun-footer">
     Made with Streamlit + LiteLLM + Imagen · 보보쌤 블로그 스타일 기반<br>
-    <span class="highlight">👸 보윤공주</span> · <span class="highlight">보윤 빗취</span> · with love 💜
+    <span class="highlight">👸 보윤공주</span> · <span class="highlight">보윤 빗취</span> · with love 💜<br>
+    <span style="font-size:0.7rem; color:#d4a5e5;">자기 사랑해 💕</span><br>
+    <span style="font-size:0.65rem; color:#c0c0c0;">v0.1.0</span>
 </div>
 """, unsafe_allow_html=True)
