@@ -21,11 +21,19 @@ def inject_secrets() -> None:
     """Streamlit Secrets 또는 .env에서 API 키를 환경변수로 주입."""
     try:
         import streamlit as st
-        for key in ("ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY", "TAVILY_API_KEY"):
+        for key in (
+            "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY",
+            "TAVILY_API_KEY", "SUPABASE_URL", "SUPABASE_KEY",
+        ):
             if not os.environ.get(key) and key in st.secrets:
                 os.environ[key] = st.secrets[key]
     except Exception:
         pass
+
+
+def use_supabase() -> bool:
+    """SUPABASE_URL과 SUPABASE_KEY가 모두 설정되어 있으면 True."""
+    return bool(os.environ.get("SUPABASE_URL") and os.environ.get("SUPABASE_KEY"))
 
 
 def ensure_app_dir() -> Path:

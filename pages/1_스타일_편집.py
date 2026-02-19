@@ -15,7 +15,7 @@ load_dotenv()
 from naverblog.config import inject_secrets
 inject_secrets()
 
-from naverblog.database import Database
+from naverblog.database import Database, create_database
 from naverblog.skills.blog_style import (
     DEFAULT_CATEGORY_STYLES,
     DEFAULT_COMMON_STYLE,
@@ -48,7 +48,7 @@ st.markdown("""
 
 @st.cache_resource
 def get_db() -> Database:
-    return Database()
+    return create_database()
 
 
 db = get_db()

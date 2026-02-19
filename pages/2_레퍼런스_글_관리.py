@@ -15,7 +15,7 @@ load_dotenv()
 from naverblog.config import inject_secrets
 inject_secrets()
 
-from naverblog.database import Database
+from naverblog.database import Database, create_database
 
 st.set_page_config(
     page_title="레퍼런스 글 관리 | 보보쌤",
@@ -43,7 +43,7 @@ st.markdown("""
 
 @st.cache_resource
 def get_db() -> Database:
-    return Database()
+    return create_database()
 
 
 db = get_db()
@@ -103,8 +103,7 @@ with tab_list:
                         st.markdown(f"[원문 보기]({post['link']})")
                 with meta_cols[3]:
                     if st.button("🗑️ 삭제", key=f"del_{post['post_id']}", type="secondary"):
-                        with db._get_conn() as conn:
-                            conn.execute("DELETE FROM blog_posts WHERE post_id = ?", (post["post_id"],))
+                        db.delete_blog_post(post["post_id"])
                         st.success(f"'{post['title'][:20]}...' 삭제됨")
                         st.rerun()
 
@@ -204,12 +203,7 @@ with tab_bulk:
         if categories:
             del_cat = st.selectbox("삭제할 카테고리", categories, key="bulk_del_cat")
             if st.button(f"🗑️ '{del_cat}' 카테고리 전체 삭제", type="secondary"):
-                with db._get_conn() as conn:
-                    cnt = conn.execute(
-                        "SELECT COUNT(*) as cnt FROM blog_posts WHERE category = ?",
-                        (del_cat,),
-                    ).fetchone()["cnt"]
-                    conn.execute("DELETE FROM blog_posts WHERE category = ?", (del_cat,))
+                cnt = db.delete_blog_posts_by_category(del_cat)
                 st.success(f"'{del_cat}' 카테고리 {cnt}개 글 삭제됨")
                 st.rerun()
 

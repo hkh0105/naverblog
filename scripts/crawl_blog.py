@@ -11,11 +11,11 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
 
 from naverblog.crawler import crawl_blog
-from naverblog.database import Database
+from naverblog.database import create_database
 
 
 def main():
-    db = Database()
+    db = create_database()
     print(f"📊 현재 DB에 저장된 포스트: {db.count_blog_posts()}개\n")
 
     result = crawl_blog(db, progress_callback=lambda msg: print(f"  {msg}"))

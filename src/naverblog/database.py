@@ -311,3 +311,29 @@ class Database:
                 "SELECT DISTINCT category FROM blog_posts WHERE category != '' ORDER BY category"
             ).fetchall()
         return [row["category"] for row in rows]
+
+    def delete_blog_post(self, post_id: str) -> bool:
+        """단일 블로그 포스트 삭제."""
+        with self._get_conn() as conn:
+            cursor = conn.execute("DELETE FROM blog_posts WHERE post_id = ?", (post_id,))
+        return cursor.rowcount > 0
+
+    def delete_blog_posts_by_category(self, category: str) -> int:
+        """카테고리별 블로그 포스트 일괄 삭제. 삭제된 개수 반환."""
+        with self._get_conn() as conn:
+            cursor = conn.execute("DELETE FROM blog_posts WHERE category = ?", (category,))
+        return cursor.rowcount
+
+
+def create_database() -> Database:
+    """환경변수에 따라 적절한 DB 인스턴스를 반환하는 팩토리 함수.
+
+    SUPABASE_URL + SUPABASE_KEY가 설정되어 있으면 SupabaseDatabase,
+    없으면 기존 SQLite Database를 반환.
+    """
+    from naverblog.config import use_supabase
+
+    if use_supabase():
+        from naverblog.supabase_db import SupabaseDatabase
+        return SupabaseDatabase()
+    return Database()
