@@ -481,18 +481,19 @@ class SmartBlockItem(BaseModel):
 
     title: str = ""
     url: str = ""
-    source: str = ""  # blog.naver.com, cafe.naver.com, kin.naver.com 등
-    content_type: str = ""  # blog, cafe, web, kin, news, image, video 등
+    source: str = ""  # blog, cafe, kin, news, video, web 등
+    content_type: str = ""  # review, web, kin, news, image, video 등
 
 
 class SmartBlock(BaseModel):
-    """네이버 검색결과 스마트블록."""
+    """네이버 검색결과 스마트블록 (섹션 단위)."""
 
-    position: int = 0  # 페이지 내 순서 (1부터)
-    block_id: str = ""  # data-meta-area 값
-    block_type: str = ""  # 블록 유형 (블로그, 뉴스, 지식iN 등)
-    content_type: str = ""  # data-meta-ssuid 기반 (review, web, kin, news 등)
-    item_count: int = 0  # 블록 내 아이템 수
+    position: int = 0  # 페이지 내 섹션 순서 (1부터)
+    section_id: str = ""  # data-meta-area 값 (섹션 대표 ID)
+    section_title: str = ""  # 섹션 제목 (h2에서 추출 또는 추정)
+    content_types: list[str] = Field(default_factory=list)  # 포함된 ssuid 유형들
+    card_count: int = 0  # 섹션 내 개별 카드 수
+    item_count: int = 0  # 섹션 내 전체 콘텐츠 아이템 수
     items: list[SmartBlockItem] = Field(default_factory=list)
 
 
@@ -500,44 +501,21 @@ class SmartBlockResult(BaseModel):
     """스마트블록 분석 전체 결과."""
 
     keyword: str
-    total_blocks: int = 0
-    blocks: list[SmartBlock] = Field(default_factory=list)
-    blog_position: int = 0  # 블로그 블록의 위치 (0이면 없음)
-    blog_count: int = 0  # 블로그 탭 내 아이템 수
-    has_ad_block: bool = False  # 광고 블록 존재 여부
-    block_type_summary: dict[str, int] = Field(default_factory=dict)  # 유형별 블록 수
+    total_sections: int = 0  # 섹션(그룹) 수
+    sections: list[SmartBlock] = Field(default_factory=list)
+    blog_position: int = 0  # 블로그 섹션 위치 (0이면 없음)
+    blog_item_count: int = 0  # 블로그 섹션 내 아이템 수
+    has_ad: bool = False  # 파워링크 광고 존재
+    has_brand: bool = False  # 브랜드 콘텐츠 존재
+    section_summary: dict[str, int] = Field(default_factory=dict)  # 섹션 유형별 수
 
 
-# 블록 유형 매핑
-_BLOCK_TYPE_MAP: dict[str, str] = {
-    "review": "블로그/리뷰",
-    "web": "웹사이트",
-    "kin": "지식iN",
-    "image": "이미지",
-    "video": "동영상",
-    "news": "뉴스",
-    "qra": "연관주제",
-    "faq": "FAQ",
-    "view": "VIEW(통합)",
-    "blog": "블로그",
-    "cafe": "카페",
-    "shop": "쇼핑",
-    "place": "플레이스",
-    "map": "지도",
-    "music": "뮤직",
-    "book": "도서",
-    "movie": "영화",
-    "dict": "사전",
-    "academic": "학술정보",
-    "encyclopedia": "백과사전",
-}
-
-# 블록 ID → 블록 유형 추정 매핑
-_BLOCK_ID_MAP: dict[str, str] = {
-    "ugB_pkR": "광고/브랜드",
-    "ugB_adR": "광고/브랜드",
+# 섹션 ID → 섹션 이름 매핑
+_SECTION_NAME_MAP: dict[str, str] = {
+    "ugB_pkR": "브랜드 콘텐츠",
+    "ugB_adR": "브랜드 콘텐츠",
     "ugB_ipR": "인플루언서",
-    "urB_coR": "통합검색",
+    "urB_coR": "VIEW (통합검색)",
     "urB_imM": "이미지",
     "urB_boR": "블로그/콘텐츠",
     "kwX_ndT": "연관주제",
@@ -549,37 +527,20 @@ _BLOCK_ID_MAP: dict[str, str] = {
     "shp_alR": "쇼핑",
     "web_nrg": "웹사이트",
     "dct_alR": "사전",
+    "bkn_all": "도서",
 }
 
+# 블로그 관련 섹션 ID
+_BLOG_SECTION_IDS = {"urB_coR", "urB_boR"}
 
-def _detect_block_type(block_id: str, content_type: str) -> str:
-    """블록 ID와 content_type으로 블록 유형 추정."""
-    # 블록 ID로 매칭
-    if block_id in _BLOCK_ID_MAP:
-        return _BLOCK_ID_MAP[block_id]
-    # content_type으로 매칭
-    if content_type in _BLOCK_TYPE_MAP:
-        return _BLOCK_TYPE_MAP[content_type]
-    # 블록 ID 패턴 매칭
-    if "nws" in block_id:
-        return "뉴스"
-    if "shp" in block_id:
-        return "쇼핑"
-    if "vdo" in block_id:
-        return "동영상"
-    if "klg" in block_id or "kin" in block_id:
-        return "지식iN"
-    if "pll" in block_id or "plc" in block_id:
-        return "플레이스"
-    if "img" in block_id or "imM" in block_id:
-        return "이미지"
-    if "web" in block_id:
-        return "웹사이트"
-    if "dct" in block_id:
-        return "사전"
-    if "bk_" in block_id or "book" in block_id:
-        return "도서"
-    return block_id  # fallback: 원본 ID 반환
+# 무시할 텍스트
+_SKIP_TEXTS = frozenset({
+    "Keep에 저장", "Keep에 바로가기", "저장", "관련도순", "최신순",
+    "팬하기", "더보기", "전체보기", "접기", "펼치기",
+    "모바일 메인 언론사", "검색결과 더보기", "뉴스 더보기",
+    "도움말", "신고", "열기", "자세히 보기",
+    "검색어제안 기능 닫기", "이 광고가 표시된 이유",
+})
 
 
 def _detect_item_source(url: str) -> str:
@@ -601,10 +562,68 @@ def _detect_item_source(url: str) -> str:
     return "web"
 
 
+def _get_section_name(section_id: str, h2_text: str, content_types: list[str]) -> str:
+    """섹션 이름 결정: h2 텍스트 > 매핑 테이블 > ID 패턴."""
+    if h2_text:
+        return h2_text
+    if section_id in _SECTION_NAME_MAP:
+        return _SECTION_NAME_MAP[section_id]
+    # 패턴 매칭
+    for pattern, name in [
+        ("nws", "뉴스"), ("shp", "쇼핑"), ("vdo", "동영상"),
+        ("klg", "지식iN"), ("kin", "지식iN"), ("pll", "플레이스"),
+        ("plc", "플레이스"), ("img", "이미지"), ("imM", "이미지"),
+        ("web", "웹사이트"), ("dct", "사전"), ("bk_", "도서"),
+    ]:
+        if pattern in section_id:
+            return name
+    return section_id
+
+
+def _extract_items_from_card(div, skip_texts: frozenset) -> list[SmartBlockItem]:
+    """sc_new 카드 하나에서 콘텐츠 아이템 추출."""
+    items: list[SmartBlockItem] = []
+    seen_urls: set[str] = set()
+    content_type = div.get("data-meta-ssuid", "").split(",")[0].strip()
+
+    for a_tag in div.select("a[href]"):
+        href = a_tag.get("href", "")
+        title = a_tag.get_text(strip=True)
+
+        if not href or not title or href in seen_urls:
+            continue
+        if not href.startswith("http"):
+            continue
+        if title in skip_texts or len(title) < 4:
+            continue
+        if title.startswith("네이버 ") and len(title) < 15:
+            continue
+
+        seen_urls.add(href)
+        source = _detect_item_source(href)
+        items.append(SmartBlockItem(
+            title=title[:100],
+            url=href,
+            source=source,
+            content_type=content_type or source,
+        ))
+        if len(items) >= 5:
+            break
+
+    # 콘텐츠 도메인 아이템을 앞으로
+    _content_domains = (
+        "blog.naver.com", "cafe.naver.com", "kin.naver.com",
+        "news.naver.com", "tv.naver.com", "youtube.com",
+    )
+    items.sort(key=lambda x: (0 if any(d in x.url for d in _content_domains) else 1))
+    return items
+
+
 def scrape_smart_blocks(keyword: str) -> SmartBlockResult:
     """네이버 검색결과 페이지에서 스마트블록 구조를 스크래핑.
 
-    requests + BeautifulSoup로 search.naver.com/search.naver 파싱.
+    같은 data-meta-area를 가진 개별 카드(sc_new)를 하나의 섹션으로 그룹핑.
+    파워링크 광고는 별도 <section> 태그에서 감지.
     API 키 불필요 (공개 페이지 스크래핑).
     """
     try:
@@ -631,113 +650,117 @@ def scrape_smart_blocks(keyword: str) -> SmartBlockResult:
 
     soup = BeautifulSoup(resp.text, "html.parser")
 
-    # 스마트블록 탐색: div.sc_new[data-meta-area]
-    block_divs = soup.select("div.sc_new[data-meta-area]")
-    if not block_divs:
-        # 대체 선택자
-        block_divs = soup.select("section[data-meta-area]")
-
-    blocks: list[SmartBlock] = []
-    blog_position = 0
-    blog_count = 0
+    # ── 1단계: 파워링크 광고 감지 (별도 section 태그) ──
     has_ad = False
-    block_type_summary: dict[str, int] = {}
-
-    for idx, div in enumerate(block_divs, start=1):
-        block_id = div.get("data-meta-area", "")
-        content_type_raw = div.get("data-meta-ssuid", "")
-
-        # content_type 추출 (여러 값일 수 있음, 첫 번째 사용)
-        content_type = content_type_raw.split(",")[0].strip() if content_type_raw else ""
-
-        block_type = _detect_block_type(block_id, content_type)
-
-        # 아이템 추출: 블록 내 링크들
-        items: list[SmartBlockItem] = []
-        seen_urls: set[str] = set()
-
-        # 무시할 텍스트 패턴 (UI 버튼 등)
-        _skip_texts = {
-            "Keep에 저장", "Keep에 바로가기", "저장", "관련도순", "최신순",
-            "팬하기", "더보기", "전체보기", "접기", "펼치기",
-            "모바일 메인 언론사", "검색결과 더보기", "뉴스 더보기",
-        }
-
-        # 콘텐츠 도메인 패턴 (우선 추출)
-        _content_domains = (
-            "blog.naver.com", "cafe.naver.com", "kin.naver.com",
-            "news.naver.com", "tv.naver.com", "youtube.com",
-            "in.naver.com", "post.naver.com",
-        )
-
-        for a_tag in div.select("a[href]"):
-            href = a_tag.get("href", "")
-            title = a_tag.get_text(strip=True)
-
-            if not href or not title or href in seen_urls:
-                continue
-            if not href.startswith("http"):
-                continue
-            if title in _skip_texts or len(title) < 3:
-                continue
-            # 네이버 서비스 홈 링크 스킵 (예: "네이버 지식iN")
-            if title.startswith("네이버 ") and len(title) < 15:
-                continue
-
-            seen_urls.add(href)
-            source = _detect_item_source(href)
-            items.append(SmartBlockItem(
-                title=title[:100],
-                url=href,
-                source=source,
-                content_type=content_type or source,
-            ))
-            if len(items) >= 10:
-                break
-
-        # 콘텐츠 도메인 아이템을 앞으로 정렬
-        items.sort(
-            key=lambda x: (
-                0 if any(d in x.url for d in _content_domains) else 1,
-                -len(x.title),
-            )
-        )
-
-        block = SmartBlock(
-            position=idx,
-            block_id=block_id,
-            block_type=block_type,
-            content_type=content_type,
-            item_count=len(items),
-            items=items,
-        )
-        blocks.append(block)
-
-        # 블로그 블록 위치 감지
-        is_blog_block = (
-            content_type in ("review", "view", "blog")
-            or "블로그" in block_type
-            or "VIEW" in block_type
-            or "리뷰" in block_type
-            or block_id in ("urB_boR",)
-        )
-        if is_blog_block and blog_position == 0:
-            blog_position = idx
-            blog_count = len(items)
-
-        # 광고 블록 감지
-        if "광고" in block_type or "브랜드" in block_type or block_id == "ugB_pkR":
+    ad_items: list[SmartBlockItem] = []
+    for sec in soup.select("section"):
+        h2 = sec.find("h2")
+        if h2 and "광고" in h2.get_text():
             has_ad = True
+            for a_tag in sec.select("a[href]"):
+                href = a_tag.get("href", "")
+                title = a_tag.get_text(strip=True)
+                if href and title and len(title) > 5 and href.startswith("http"):
+                    if title not in _SKIP_TEXTS:
+                        ad_items.append(SmartBlockItem(
+                            title=title[:100], url=href,
+                            source="ad", content_type="ad",
+                        ))
+            break
 
-        # 유형별 집계
-        block_type_summary[block_type] = block_type_summary.get(block_type, 0) + 1
+    # ── 2단계: sc_new 블록을 섹션으로 그룹핑 ──
+    block_divs = soup.select("div.sc_new[data-meta-area]")
+
+    # 연속된 같은 area를 하나의 섹션으로 묶기
+    grouped: list[tuple[str, list]] = []
+    current_area = None
+    current_cards: list = []
+
+    for div in block_divs:
+        area = div.get("data-meta-area", "")
+        if area != current_area:
+            if current_cards:
+                grouped.append((current_area, current_cards))  # type: ignore[arg-type]
+            current_area = area
+            current_cards = [div]
+        else:
+            current_cards.append(div)
+    if current_cards:
+        grouped.append((current_area, current_cards))  # type: ignore[arg-type]
+
+    # ── 3단계: 그룹 → SmartBlock 변환 ──
+    sections: list[SmartBlock] = []
+    blog_position = 0
+    blog_item_count = 0
+    has_brand = False
+    section_summary: dict[str, int] = {}
+
+    # 파워링크 광고 섹션 (가장 먼저 추가)
+    if has_ad:
+        sections.append(SmartBlock(
+            position=1,
+            section_id="ad_powerlink",
+            section_title="파워링크 (광고)",
+            content_types=["ad"],
+            card_count=1,
+            item_count=len(ad_items),
+            items=ad_items[:5],
+        ))
+        section_summary["파워링크 (광고)"] = 1
+
+    for area_id, cards in grouped:
+        pos = len(sections) + 1
+
+        # h2 제목 추출 (그룹 첫 카드에서)
+        h2 = cards[0].find("h2")
+        h2_text = h2.get_text(strip=True) if h2 else ""
+
+        # content_type 목록
+        content_types = list(set(
+            c.get("data-meta-ssuid", "").split(",")[0].strip()
+            for c in cards if c.get("data-meta-ssuid")
+        ))
+
+        section_title = _get_section_name(area_id, h2_text, content_types)
+
+        # 카드에서 아이템 추출
+        all_items: list[SmartBlockItem] = []
+        for card in cards:
+            all_items.extend(_extract_items_from_card(card, _SKIP_TEXTS))
+
+        section = SmartBlock(
+            position=pos,
+            section_id=area_id,
+            section_title=section_title,
+            content_types=content_types,
+            card_count=len(cards),
+            item_count=len(all_items),
+            items=all_items,
+        )
+        sections.append(section)
+
+        # 블로그 섹션 위치 감지 (VIEW 통합검색 또는 블로그/콘텐츠)
+        is_blog_section = (
+            area_id in _BLOG_SECTION_IDS
+            or any(ct in ("review", "view", "blog") for ct in content_types)
+        )
+        if is_blog_section and blog_position == 0:
+            blog_position = pos
+            blog_item_count = len(all_items)
+
+        # 브랜드 콘텐츠 감지
+        if area_id in ("ugB_pkR", "ugB_adR"):
+            has_brand = True
+
+        section_summary[section_title] = section_summary.get(section_title, 0) + 1
 
     return SmartBlockResult(
         keyword=keyword,
-        total_blocks=len(blocks),
-        blocks=blocks,
+        total_sections=len(sections),
+        sections=sections,
         blog_position=blog_position,
-        blog_count=blog_count,
-        has_ad_block=has_ad,
-        block_type_summary=block_type_summary,
+        blog_item_count=blog_item_count,
+        has_ad=has_ad,
+        has_brand=has_brand,
+        section_summary=section_summary,
     )
