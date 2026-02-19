@@ -30,9 +30,11 @@ from naverblog.naver_api import (
     KeywordMetrics,
     NaverDataLabClient,
     NaverSearchAdClient,
+    SmartBlockResult,
     calculate_detailed_saturation,
     calculate_keyword_grade,
     calculate_saturation,
+    scrape_smart_blocks,
 )
 
 # ─── 페이지 설정 ───
@@ -154,6 +156,76 @@ st.markdown("""
         border: 1px solid #e5e7eb;
     }
     .history-chip:hover { background: #e5e7eb; }
+
+    /* 스마트블록 */
+    .sb-block {
+        border: 1px solid #e5e7eb;
+        border-radius: 0.75rem;
+        padding: 1rem 1.2rem;
+        margin-bottom: 0.75rem;
+        background: white;
+        position: relative;
+    }
+    .sb-block-blog {
+        border-color: #34d399;
+        background: #f0fdf4;
+    }
+    .sb-block-ad {
+        border-color: #fbbf24;
+        background: #fffbeb;
+    }
+    .sb-pos {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 28px; height: 28px;
+        border-radius: 50%;
+        background: #6b7280;
+        color: white;
+        font-size: 0.8rem;
+        font-weight: 700;
+        margin-right: 0.5rem;
+    }
+    .sb-pos-blog { background: #059669; }
+    .sb-pos-ad { background: #f59e0b; }
+    .sb-type {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: #1f2937;
+    }
+    .sb-meta {
+        color: #6b7280;
+        font-size: 0.78rem;
+        margin-top: 0.25rem;
+    }
+    .sb-item {
+        padding: 0.3rem 0;
+        border-bottom: 1px solid #f3f4f6;
+        font-size: 0.85rem;
+    }
+    .sb-item:last-child { border-bottom: none; }
+    .sb-item-source {
+        display: inline-block;
+        padding: 0.1rem 0.4rem;
+        border-radius: 0.3rem;
+        font-size: 0.7rem;
+        font-weight: 600;
+        margin-right: 0.3rem;
+    }
+    .sb-src-blog { background: #d1fae5; color: #065f46; }
+    .sb-src-cafe { background: #dbeafe; color: #1e40af; }
+    .sb-src-news { background: #fef3c7; color: #92400e; }
+    .sb-src-kin { background: #ede9fe; color: #5b21b6; }
+    .sb-src-web { background: #f3f4f6; color: #374151; }
+    .sb-src-video { background: #fce7f3; color: #9d174d; }
+    .sb-src-shop { background: #ecfdf5; color: #047857; }
+    .sb-summary-card {
+        background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+        border: 1px solid #a7f3d0;
+        border-radius: 0.75rem;
+        padding: 1.2rem;
+        margin-bottom: 1rem;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -447,6 +519,16 @@ if submitted and keyword_input.strip():
         )
 
     # ═══════════════════════════════════════════════════
+    # 스마트블록 스크래핑
+    # ═══════════════════════════════════════════════════
+    smart_block_result: SmartBlockResult | None = None
+    with st.spinner("스마트블록 분석 중..."):
+        try:
+            smart_block_result = scrape_smart_blocks(main_keyword)
+        except Exception:
+            pass
+
+    # ═══════════════════════════════════════════════════
     # 결과 탭
     # ═══════════════════════════════════════════════════
     tab_names = ["📊 키워드 개요"]
@@ -458,6 +540,8 @@ if submitted and keyword_input.strip():
         tab_names.append("🎯 포화지수")
     if datalab_client.is_configured:
         tab_names.append("👥 인구통계")
+    # 스마트블록은 항상 추가 (API 키 불필요)
+    tab_names.append("🧱 스마트블록")
 
     tabs = st.tabs(tab_names)
     tab_idx = 0
@@ -1006,6 +1090,207 @@ if submitted and keyword_input.strip():
                     st.info("연령별 데이터를 가져올 수 없습니다.")
             except Exception as e:
                 st.warning(f"연령별 분석 오류: {e}")
+
+    # ═══════════════════════════════════════════════════
+    # Tab 6: 스마트블록
+    # ═══════════════════════════════════════════════════
+    with tabs[-1]:  # 항상 마지막 탭
+        st.markdown("### 🧱 네이버 스마트블록 분석")
+        st.caption("네이버 검색결과 페이지의 스마트블록 구성을 분석하여 블로그 노출 위치를 확인합니다")
+
+        if smart_block_result and smart_block_result.total_blocks > 0:
+            sbr = smart_block_result
+
+            # ── 요약 카드 ──
+            st.markdown(f"""
+            <div class="sb-summary-card">
+                <div style="display:flex;align-items:center;gap:1.5rem;flex-wrap:wrap;">
+                    <div>
+                        <div style="font-size:0.78rem;color:#6b7280;">전체 블록 수</div>
+                        <div style="font-size:1.5rem;font-weight:700;color:#1f2937;">{sbr.total_blocks}개</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.78rem;color:#6b7280;">블로그 블록 위치</div>
+                        <div style="font-size:1.5rem;font-weight:700;color:{'#059669' if sbr.blog_position else '#ef4444'};">
+                            {f'{sbr.blog_position}번째' if sbr.blog_position else '없음'}
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.78rem;color:#6b7280;">블로그 노출 수</div>
+                        <div style="font-size:1.5rem;font-weight:700;color:#1f2937;">{sbr.blog_count}개</div>
+                    </div>
+                    <div>
+                        <div style="font-size:0.78rem;color:#6b7280;">광고 블록</div>
+                        <div style="font-size:1.5rem;font-weight:700;color:{'#f59e0b' if sbr.has_ad_block else '#10b981'};">
+                            {'있음' if sbr.has_ad_block else '없음'}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            """, unsafe_allow_html=True)
+
+            # ── 블로그 노출 분석 ──
+            if sbr.blog_position:
+                if sbr.blog_position <= 2:
+                    exposure_msg = "블로그 콘텐츠가 **상단에 노출**됩니다. 양질의 글을 작성하면 높은 노출을 기대할 수 있습니다."
+                    exposure_icon = "🟢"
+                elif sbr.blog_position <= 4:
+                    exposure_msg = "블로그 콘텐츠가 **중간 위치에 노출**됩니다. 스크롤 없이 볼 수 있는 위치입니다."
+                    exposure_icon = "🟡"
+                else:
+                    exposure_msg = "블로그 콘텐츠가 **하단에 노출**됩니다. 다른 콘텐츠 유형이 우선 노출되고 있습니다."
+                    exposure_icon = "🔴"
+                st.info(f"{exposure_icon} **블로그 노출 위치 ({sbr.blog_position}/{sbr.total_blocks})**: {exposure_msg}")
+            else:
+                st.warning("⚠️ 이 키워드의 검색결과에서 블로그 전용 블록이 감지되지 않았습니다. 통합검색이나 VIEW 탭에 포함되어 있을 수 있습니다.")
+
+            st.markdown("---")
+
+            # ── 블록 구성 요약 ──
+            st.markdown("#### 블록 유형 분포")
+            if sbr.block_type_summary:
+                type_df = pd.DataFrame([
+                    {"블록 유형": k, "개수": v}
+                    for k, v in sorted(sbr.block_type_summary.items(), key=lambda x: x[1], reverse=True)
+                ])
+                bc1, bc2 = st.columns([2, 3])
+                with bc1:
+                    st.dataframe(type_df, width="stretch", hide_index=True)
+                with bc2:
+                    st.bar_chart(type_df.set_index("블록 유형"))
+
+            st.markdown("---")
+
+            # ── 블록 상세 목록 ──
+            st.markdown("#### 검색결과 블록 순서")
+            st.caption("검색결과 페이지에 표시되는 순서대로 나열됩니다")
+
+            for block in sbr.blocks:
+                is_blog = (
+                    block.content_type in ("review", "view", "blog")
+                    or "블로그" in block.block_type
+                    or "VIEW" in block.block_type
+                    or "리뷰" in block.block_type
+                )
+                is_ad = "광고" in block.block_type or "브랜드" in block.block_type
+
+                block_cls = "sb-block"
+                pos_cls = "sb-pos"
+                if is_blog:
+                    block_cls += " sb-block-blog"
+                    pos_cls += " sb-pos-blog"
+                elif is_ad:
+                    block_cls += " sb-block-ad"
+                    pos_cls += " sb-pos-ad"
+
+                items_html = ""
+                if block.items:
+                    items_html = "<div style='margin-top:0.5rem;'>"
+                    for item in block.items[:5]:
+                        src_cls = f"sb-src-{item.source}"
+                        src_label = {
+                            "blog": "블로그",
+                            "cafe": "카페",
+                            "news": "뉴스",
+                            "kin": "지식iN",
+                            "video": "동영상",
+                            "shop": "쇼핑",
+                            "web": "웹",
+                        }.get(item.source, item.source)
+                        title_escaped = item.title.replace("<", "&lt;").replace(">", "&gt;")
+                        items_html += (
+                            f'<div class="sb-item">'
+                            f'<span class="sb-item-source {src_cls}">{src_label}</span>'
+                            f'{title_escaped}'
+                            f'</div>'
+                        )
+                    if len(block.items) > 5:
+                        items_html += f'<div class="sb-meta">... 외 {len(block.items) - 5}개 항목</div>'
+                    items_html += "</div>"
+
+                st.markdown(f"""
+                <div class="{block_cls}">
+                    <div style="display:flex;align-items:center;">
+                        <span class="{pos_cls}">{block.position}</span>
+                        <span class="sb-type">{block.block_type}</span>
+                        {'<span style="margin-left:0.5rem;font-size:0.72rem;background:#d1fae5;color:#065f46;padding:0.1rem 0.5rem;border-radius:1rem;font-weight:600;">블로그 노출</span>' if is_blog else ''}
+                        {'<span style="margin-left:0.5rem;font-size:0.72rem;background:#fef3c7;color:#92400e;padding:0.1rem 0.5rem;border-radius:1rem;font-weight:600;">광고</span>' if is_ad else ''}
+                    </div>
+                    <div class="sb-meta">
+                        블록 ID: {block.block_id}
+                        {f' · 콘텐츠 유형: {block.content_type}' if block.content_type else ''}
+                        · 항목 {block.item_count}개
+                    </div>
+                    {items_html}
+                </div>
+                """, unsafe_allow_html=True)
+
+            st.markdown("---")
+
+            # ── SEO 전략 가이드 ──
+            st.markdown("#### 💡 SEO 전략 가이드")
+            strategies = []
+            if sbr.blog_position:
+                if sbr.blog_position <= 2:
+                    strategies.append("블로그가 상단 노출되므로, **제목과 썸네일 최적화**에 집중하세요.")
+                    strategies.append("상위 노출 경쟁이 치열할 수 있으니 **차별화된 콘텐츠**를 작성하세요.")
+                elif sbr.blog_position <= 4:
+                    strategies.append("블로그가 중간 위치에 있어 **충분한 노출 기회**가 있습니다.")
+                    strategies.append("검색 의도에 맞는 **핵심 정보를 서두에 배치**하세요.")
+                else:
+                    strategies.append("블로그가 하단에 있어 노출이 제한적입니다. **롱테일 키워드**를 고려하세요.")
+
+            if sbr.has_ad_block:
+                strategies.append("광고 블록이 있어 **유기 검색 노출이 한 단계 밀립니다.** 차별화된 제목이 중요합니다.")
+
+            if "뉴스" in sbr.block_type_summary:
+                strategies.append("뉴스 블록이 포함되어 있어 **시의성 있는 콘텐츠**가 유리합니다.")
+
+            if "지식iN" in sbr.block_type_summary:
+                strategies.append("지식iN 블록이 있으므로, **Q&A 형식의 콘텐츠 구성**이 효과적입니다.")
+
+            if "동영상" in sbr.block_type_summary:
+                strategies.append("동영상 블록이 있어 **영상 콘텐츠 병행**이 노출에 유리합니다.")
+
+            if "쇼핑" in sbr.block_type_summary:
+                strategies.append("쇼핑 블록이 있어 **상업적 의도가 강한 키워드**입니다. 제품 리뷰 형태의 글이 효과적입니다.")
+
+            if "플레이스" in sbr.block_type_summary:
+                strategies.append("플레이스 블록이 있어 **지역/장소 관련 키워드**입니다. 방문 후기 형태가 효과적입니다.")
+
+            if not strategies:
+                strategies.append("검색결과 구조를 분석하여 키워드에 맞는 콘텐츠 전략을 수립하세요.")
+
+            for s in strategies:
+                st.markdown(f"- {s}")
+
+            # ── 해석 가이드 ──
+            with st.expander("스마트블록이란?"):
+                st.markdown("""
+**네이버 스마트블록**은 검색 의도에 따라 검색결과 페이지를 여러 블록으로 구성하는 시스템입니다.
+
+| 블록 유형 | 설명 |
+|-----------|------|
+| 블로그/리뷰 | 블로그/카페 게시글 (VIEW 탭) |
+| 뉴스 | 최신 뉴스 기사 |
+| 지식iN | 질문/답변 콘텐츠 |
+| 이미지 | 관련 이미지 |
+| 동영상 | 유튜브/네이버TV 영상 |
+| 쇼핑 | 쇼핑 상품 |
+| 플레이스 | 지도/장소 정보 |
+| 광고/브랜드 | 검색광고 (파워링크) |
+
+**블로그 노출 위치가 중요한 이유:**
+- 1~2번째: 스크롤 없이 바로 보임 → 높은 CTR
+- 3~4번째: 한 번 스크롤 후 노출 → 보통 CTR
+- 5번째 이후: 많은 스크롤 필요 → 낮은 CTR
+
+블록 순서는 키워드에 따라 다르며, 네이버 알고리즘이 검색 의도를 분석하여 자동 배치합니다.
+                """)
+
+        else:
+            st.warning("스마트블록 데이터를 가져올 수 없습니다. 네트워크를 확인해주세요.")
+            st.caption("스마트블록 분석은 네이버 검색 페이지를 직접 분석하므로 API 키가 필요하지 않습니다.")
 
     # ─── 글 생성 연동 버튼 ───
     st.divider()

@@ -21,6 +21,7 @@ dependencies = [
     "reportlab>=4.0",
     "supabase>=2.0",
     "plotly>=5.0",
+    "beautifulsoup4>=4.12",
 ]
 
 [tool.hatch.build.targets.wheel]
