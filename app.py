@@ -583,6 +583,14 @@ if submitted and topic.strip():
             st.error(f"글 생성 중 오류가 발생했습니다: {e}")
             st.stop()
 
+    # session_state에 저장 (리런 시 레퍼런스 추가용)
+    st.session_state["last_generation"] = {
+        "id": generation.id,
+        "topic": topic.strip(),
+        "output_markdown": generation.output_markdown,
+        "category": selected_category,
+    }
+
     # ── AI 이미지 생성 ──
     generated_images = []
     if use_image_gen:
@@ -736,39 +744,37 @@ if submitted and topic.strip():
         st.caption("AI에게 전달된 전체 프롬프트 (디버깅용)")
         st.text(generation.prompt_used)
 
-    # ── 레퍼런스에 추가 ──
+elif submitted:
+    st.warning("주제를 입력해주세요!")
+
+# ── 레퍼런스에 추가 (session_state 기반) ──
+last_gen = st.session_state.get("last_generation")
+if last_gen:
     st.divider()
     st.markdown("#### 이 글을 레퍼런스에 추가하시겠습니까?")
     st.caption("추가하면 다음 글 생성 시 이 글이 참조 컨텍스트로 사용됩니다.")
 
     ref_col1, ref_col2 = st.columns([1, 1])
     with ref_col1:
-        ref_category = st.selectbox(
-            "레퍼런스 카테고리",
-            [selected_category] + [c for c in (db_categories or AVAILABLE_CATEGORIES) if c != selected_category],
-            index=0,
-            key="ref_save_cat",
-        ) if selected_category else st.selectbox(
-            "레퍼런스 카테고리",
-            db_categories or AVAILABLE_CATEGORIES,
-            index=0,
-            key="ref_save_cat",
+        cat_options = (
+            [last_gen["category"]] + [c for c in (db_categories or AVAILABLE_CATEGORIES) if c != last_gen["category"]]
+            if last_gen.get("category")
+            else db_categories or AVAILABLE_CATEGORIES
         )
+        ref_category = st.selectbox("레퍼런스 카테고리", cat_options, index=0, key="ref_save_cat")
     with ref_col2:
         if st.button("📥 레퍼런스에 추가", type="primary", key="save_to_ref"):
-            import time
-            post_id = f"gen_{generation.id}_{int(time.time())}"
+            import time as _time
+            post_id = f"gen_{last_gen['id']}_{int(_time.time())}"
             db.save_blog_post(
                 post_id=post_id,
-                title=topic.strip(),
+                title=last_gen["topic"],
                 category=ref_category,
-                content=generation.output_markdown,
+                content=last_gen["output_markdown"],
             )
             st.success(f"레퍼런스에 추가됨! (카테고리: {ref_category})")
+            del st.session_state["last_generation"]
             st.cache_resource.clear()
-
-elif submitted:
-    st.warning("주제를 입력해주세요!")
 
 st.divider()
 
