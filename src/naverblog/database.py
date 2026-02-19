@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 
 from naverblog.config import DB_PATH, PRESETS_DIR, ensure_app_dir
@@ -59,6 +59,15 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     pub_date TEXT,
     link TEXT,
     crawled_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS keyword_cache (
+    keyword TEXT NOT NULL,
+    data_type TEXT NOT NULL,
+    result_json TEXT NOT NULL,
+    queried_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    expires_at TIMESTAMP NOT NULL,
+    PRIMARY KEY (keyword, data_type)
 );
 """
 
@@ -322,6 +331,52 @@ class Database:
         """카테고리별 블로그 포스트 일괄 삭제. 삭제된 개수 반환."""
         with self._get_conn() as conn:
             cursor = conn.execute("DELETE FROM blog_posts WHERE category = ?", (category,))
+        return cursor.rowcount
+
+    # --- Keyword Cache ---
+
+    def get_keyword_cache(self, keyword: str, data_type: str) -> dict | None:
+        """캐시된 키워드 분석 결과를 반환. 만료된 경우 None."""
+        with self._get_conn() as conn:
+            row = conn.execute(
+                "SELECT result_json FROM keyword_cache "
+                "WHERE keyword = ? AND data_type = ? AND expires_at > CURRENT_TIMESTAMP",
+                (keyword, data_type),
+            ).fetchone()
+        if row is None:
+            return None
+        return json.loads(row["result_json"])
+
+    def save_keyword_cache(
+        self, keyword: str, data_type: str, result: dict, ttl_hours: int = 24,
+    ) -> None:
+        """키워드 분석 결과를 캐시에 저장."""
+        expires_at = (datetime.now() + timedelta(hours=ttl_hours)).isoformat()
+        with self._get_conn() as conn:
+            conn.execute(
+                "INSERT OR REPLACE INTO keyword_cache "
+                "(keyword, data_type, result_json, queried_at, expires_at) "
+                "VALUES (?, ?, ?, CURRENT_TIMESTAMP, ?)",
+                (keyword, data_type, json.dumps(result, ensure_ascii=False), expires_at),
+            )
+
+    def clear_expired_cache(self) -> int:
+        """만료된 캐시 항목 삭제. 삭제된 개수 반환."""
+        with self._get_conn() as conn:
+            cursor = conn.execute(
+                "DELETE FROM keyword_cache WHERE expires_at <= CURRENT_TIMESTAMP"
+            )
+        return cursor.rowcount
+
+    def clear_keyword_cache(self, keyword: str = "") -> int:
+        """특정 키워드 또는 전체 캐시 삭제."""
+        with self._get_conn() as conn:
+            if keyword:
+                cursor = conn.execute(
+                    "DELETE FROM keyword_cache WHERE keyword = ?", (keyword,)
+                )
+            else:
+                cursor = conn.execute("DELETE FROM keyword_cache")
         return cursor.rowcount
 
 

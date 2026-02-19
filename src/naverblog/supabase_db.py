@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import json
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 from supabase import Client, create_client
 
@@ -354,4 +354,60 @@ class SupabaseDatabase:
             .eq("category", category)
             .execute()
         )
+        return len(resp.data)
+
+    # --- Keyword Cache ---
+
+    def get_keyword_cache(self, keyword: str, data_type: str) -> dict | None:
+        """캐시된 키워드 분석 결과를 반환. 만료된 경우 None."""
+        resp = (
+            self._client.table("keyword_cache")
+            .select("result_json")
+            .eq("keyword", keyword)
+            .eq("data_type", data_type)
+            .gte("expires_at", datetime.now().isoformat())
+            .limit(1)
+            .execute()
+        )
+        if not resp.data:
+            return None
+        result = resp.data[0]["result_json"]
+        if isinstance(result, str):
+            return json.loads(result)
+        return result
+
+    def save_keyword_cache(
+        self, keyword: str, data_type: str, result: dict, ttl_hours: int = 24,
+    ) -> None:
+        """키워드 분석 결과를 캐시에 저장."""
+        expires_at = (datetime.now() + timedelta(hours=ttl_hours)).isoformat()
+        self._client.table("keyword_cache").upsert(
+            {
+                "keyword": keyword,
+                "data_type": data_type,
+                "result_json": json.dumps(result, ensure_ascii=False),
+                "queried_at": datetime.now().isoformat(),
+                "expires_at": expires_at,
+            },
+            on_conflict="keyword,data_type",
+        ).execute()
+
+    def clear_expired_cache(self) -> int:
+        """만료된 캐시 항목 삭제."""
+        resp = (
+            self._client.table("keyword_cache")
+            .delete()
+            .lt("expires_at", datetime.now().isoformat())
+            .execute()
+        )
+        return len(resp.data)
+
+    def clear_keyword_cache(self, keyword: str = "") -> int:
+        """특정 키워드 또는 전체 캐시 삭제."""
+        query = self._client.table("keyword_cache").delete()
+        if keyword:
+            query = query.eq("keyword", keyword)
+        else:
+            query = query.neq("keyword", "")
+        resp = query.execute()
         return len(resp.data)

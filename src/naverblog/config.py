@@ -24,6 +24,8 @@ def inject_secrets() -> None:
         for key in (
             "ANTHROPIC_API_KEY", "GEMINI_API_KEY", "OPENAI_API_KEY",
             "TAVILY_API_KEY", "SUPABASE_URL", "SUPABASE_KEY",
+            "NAVER_AD_API_KEY", "NAVER_AD_SECRET_KEY", "NAVER_AD_CUSTOMER_ID",
+            "NAVER_CLIENT_ID", "NAVER_CLIENT_SECRET",
         ):
             if not os.environ.get(key) and key in st.secrets:
                 os.environ[key] = st.secrets[key]

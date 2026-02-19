@@ -22,6 +22,13 @@
 {{ skill_results["search"].summary }}
 {% endif %}
 
+{% if skill_results.get("keyword_analysis") %}
+## 키워드 분석 (SEO 데이터)
+아래는 네이버 검색 데이터 분석 결과입니다. 이 키워드들을 제목, 소제목, 본문에 자연스럽게 포함하여 검색 최적화를 해주세요.
+
+{{ skill_results["keyword_analysis"].summary }}
+{% endif %}
+
 ## 리뷰 구성
 - 제품/서비스 소개 (첫인상)
 - 장점 (구체적 사용 경험)

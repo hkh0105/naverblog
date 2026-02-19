@@ -32,44 +32,44 @@ __version__ = "0.2.0"
 # ─── 카테고리별 스킬 프리셋 ───
 CATEGORY_SKILL_PRESETS: dict[str, dict] = {
     "과목별 공부 로직": {
-        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "교재/학습법 최신 정보 + 기존 글 참조",
+        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
+        "note": "교재/학습법 최신 정보 + 기존 글 참조 + SEO",
     },
     "입시 파이널 : 면접": {
-        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "면접 기출 트렌드 + 기존 글 참조",
+        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
+        "note": "면접 기출 트렌드 + 기존 글 참조 + SEO",
     },
     "입시 파이널 : 자기소개서": {
-        "search": False, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "스타일 가이드 + 기존 글 참조",
+        "search": False, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
+        "note": "스타일 가이드 + 기존 글 참조 + SEO",
     },
     "생기부 : 수시의 모든 것": {
-        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "최신 세특 트렌드 + 기존 글 참조",
+        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
+        "note": "최신 세특 트렌드 + 기존 글 참조 + SEO",
     },
     "77일만에 의대 가기": {
-        "search": False, "blog_style": True, "reference_posts": True, "image_gen": True,
+        "search": False, "blog_style": True, "reference_posts": True, "image_gen": True, "keyword_analysis": False,
         "note": "개인 경험 스토리 + 기존 글 참조 + 이미지",
     },
     "[전략] 입시 설계의 정석": {
-        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "최신 입시 데이터 + 기존 글 참조",
+        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
+        "note": "최신 입시 데이터 + 기존 글 참조 + SEO",
     },
     "시기별 로드맵": {
-        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "시기별 최신 정보 + 기존 글 참조",
+        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
+        "note": "시기별 최신 정보 + 기존 글 참조 + SEO",
     },
     "학원 / 과외의 모든 것": {
-        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "학원 정보 + 기존 글 참조",
+        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
+        "note": "학원 정보 + 기존 글 참조 + SEO",
     },
     "블로그 활용법 (후기 zip)": {
-        "search": False, "blog_style": True, "reference_posts": True, "image_gen": False,
+        "search": False, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": False,
         "note": "후기 정리 + 기존 글 참조",
     },
     "입시 정보 모음": {
-        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False,
-        "note": "입시 데이터 + 기존 글 참조",
+        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
+        "note": "입시 데이터 + 기존 글 참조 + SEO",
     },
 }
 
@@ -364,12 +364,17 @@ with st.sidebar:
     default_search = preset["search"] if preset else True
     default_style = preset["blog_style"] if preset else True
     default_ref = preset.get("reference_posts", True) if preset else True
+    default_keyword = preset.get("keyword_analysis", False) if preset else False
 
     use_search = st.toggle("웹 검색", value=default_search, help="Tavily API로 최신 정보 검색")
     use_blog_style = st.toggle("보보쌤 스타일", value=default_style, help="카테고리별 문체/구조 적용")
     use_ref_posts = st.toggle(
         "기존 글 참조", value=default_ref,
         help=f"보보쌤 블로그 글 {db.count_blog_posts()}개를 참조",
+    )
+    use_keyword = st.toggle(
+        "키워드 분석", value=default_keyword,
+        help="네이버 검색량/경쟁도 데이터를 글에 반영 (NAVER_AD_API_KEY 필요)",
     )
 
     ref_post_count = 3
@@ -539,6 +544,11 @@ if submitted and topic.strip():
         registry.disable("reference_posts")
     else:
         registry.enable("reference_posts")
+
+    if not use_keyword:
+        registry.disable("keyword_analysis")
+    else:
+        registry.enable("keyword_analysis")
 
     # 이미지 배치 지시
     full_extra = extra or ""

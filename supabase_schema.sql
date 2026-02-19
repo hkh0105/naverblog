@@ -59,6 +59,16 @@ CREATE TABLE IF NOT EXISTS blog_posts (
     crawled_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 7. keyword_cache
+CREATE TABLE IF NOT EXISTS keyword_cache (
+    keyword TEXT NOT NULL,
+    data_type TEXT NOT NULL,
+    result_json TEXT NOT NULL,
+    queried_at TIMESTAMPTZ DEFAULT NOW(),
+    expires_at TIMESTAMPTZ NOT NULL,
+    PRIMARY KEY (keyword, data_type)
+);
+
 -- ============================================================
 -- RLS (Row Level Security) 정책
 -- service_role key 사용 시 RLS가 우회되므로 기본적으로 비활성화.
@@ -86,3 +96,4 @@ CREATE TABLE IF NOT EXISTS blog_posts (
 CREATE INDEX IF NOT EXISTS idx_blog_posts_category ON blog_posts (category);
 CREATE INDEX IF NOT EXISTS idx_generations_created_at ON generations (created_at DESC);
 CREATE INDEX IF NOT EXISTS idx_personas_is_preset ON personas (is_preset);
+CREATE INDEX IF NOT EXISTS idx_keyword_cache_expires ON keyword_cache (expires_at);
