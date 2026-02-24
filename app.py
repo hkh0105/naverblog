@@ -754,6 +754,13 @@ if submitted and topic.strip():
         st.caption("AI에게 전달된 전체 프롬프트 (디버깅용)")
         st.text(generation.prompt_used)
 
+    # ── 썸네일 만들기 링크 ──
+    st.page_link(
+        "pages/6_썸네일_제작.py",
+        label="🖼️ 이 글의 썸네일 만들기",
+        icon="🖼️",
+    )
+
 elif submitted:
     st.warning("주제를 입력해주세요!")
 
