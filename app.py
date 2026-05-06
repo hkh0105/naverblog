@@ -262,7 +262,11 @@ st.markdown("""
 # ─── 초기화 (캐시) ───
 @st.cache_resource
 def get_db() -> Database:
-    return create_database()
+    try:
+        return create_database()
+    except Exception as exc:
+        os.environ["NAVERBLOG_DB_FALLBACK_REASON"] = str(exc)
+        return Database()
 
 
 @st.cache_resource
