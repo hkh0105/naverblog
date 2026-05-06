@@ -386,9 +386,15 @@ def create_database() -> Database:
     SUPABASE_URL + SUPABASE_KEY가 설정되어 있으면 SupabaseDatabase,
     없으면 기존 SQLite Database를 반환.
     """
+    import os
+
     from naverblog.config import use_supabase
 
     if use_supabase():
-        from naverblog.supabase_db import SupabaseDatabase
-        return SupabaseDatabase()
+        try:
+            from naverblog.supabase_db import SupabaseDatabase
+
+            return SupabaseDatabase()
+        except Exception as exc:
+            os.environ["NAVERBLOG_DB_FALLBACK_REASON"] = str(exc)
     return Database()

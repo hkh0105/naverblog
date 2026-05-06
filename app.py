@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import sys
+import os
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent / "src"))
@@ -272,14 +273,30 @@ def get_skill_registry(_db: Database) -> SkillRegistry:
 
 
 db = get_db()
+db_fallback_reason = os.environ.pop("NAVERBLOG_DB_FALLBACK_REASON", "")
+if db_fallback_reason:
+    st.warning(
+        "Supabase 연결에 실패해서 임시 로컬 DB로 실행 중입니다. "
+        "프로덕션에서 데이터가 유지되려면 Supabase URL/KEY와 스키마를 확인해주세요."
+    )
 seed_default_styles(db)
 registry = get_skill_registry(db)
 
 # ─── 자동 크롤링 ───
-if db.count_blog_posts() == 0:
+try:
+    should_auto_crawl = db.count_blog_posts() == 0
+except Exception as exc:
+    should_auto_crawl = False
+    st.warning(f"레퍼런스 글 개수를 확인하지 못했습니다: {exc}")
+
+if should_auto_crawl:
     from naverblog.crawler import crawl_blog
     with st.spinner("첫 실행: 보보쌤 블로그 글 50개를 수집하고 있습니다..."):
-        result = crawl_blog(db)
+        try:
+            result = crawl_blog(db)
+        except Exception as exc:
+            result = {"success": 0, "skip": 0, "fail": 0}
+            st.warning(f"자동 크롤링을 완료하지 못했습니다: {exc}")
     if result["success"] > 0:
         st.toast(f"블로그 글 {result['success']}개 자동 수집 완료!", icon="✅")
         st.cache_resource.clear()
