@@ -18,7 +18,7 @@ from naverblog.config import inject_secrets
 inject_secrets()
 
 st.set_page_config(
-    page_title="썸네일 제작 | 보보쌤",
+    page_title="썸네일 제작 | 메디블로그",
     page_icon="🖼️",
     layout="wide",
 )
@@ -61,7 +61,7 @@ config_json = json.dumps({
     "category": prefill_category,
     "title": prefill_title,
     "subtitle": prefill_subtitle,
-    "branding": "보보쌤의 공부 & 입시 연구소",
+    "branding": "메디블로그 AI 병원 건강정보",
 }, ensure_ascii=False)
 
 CANVAS_HTML = r"""
@@ -297,8 +297,8 @@ body { font-family: 'Noto Sans KR', sans-serif; background: #f8f9fa; overflow-x:
 var CONFIG = __CONFIG_JSON__;
 
 var PRESETS = {
-    "보보쌤 살구": { bg:"#F5C6AA", text:"#1a1a1a", hl:"#E8967D", accent:"#C85A3A", brand:"#8B5E3C", sub:"#C85A3A" },
-    "보보쌤 크림": { bg:"#FDF6EC", text:"#1a1a1a", hl:"#FFE066", accent:"#7c3aed", brand:"#888888", sub:"#7c3aed" },
+    "메디블로그 살구": { bg:"#F5C6AA", text:"#1a1a1a", hl:"#E8967D", accent:"#C85A3A", brand:"#8B5E3C", sub:"#C85A3A" },
+    "메디블로그 크림": { bg:"#FDF6EC", text:"#1a1a1a", hl:"#FFE066", accent:"#7c3aed", brand:"#888888", sub:"#7c3aed" },
     "퍼플":       { bg:"#F5F0FF", text:"#1a1a1a", hl:"#C4B5FD", accent:"#7c3aed", brand:"#7c3aed", sub:"#7c3aed" },
     "화이트":     { bg:"#FFFFFF", text:"#1a1a1a", hl:"#FFE066", accent:"#3B82F6", brand:"#999999", sub:"#3B82F6" },
     "핑크":       { bg:"#FFF0F5", text:"#1a1a1a", hl:"#FBCFE8", accent:"#EC4899", brand:"#EC4899", sub:"#EC4899" },
@@ -307,7 +307,7 @@ var PRESETS = {
     "민트":       { bg:"#F0FDF4", text:"#1a1a1a", hl:"#86EFAC", accent:"#059669", brand:"#059669", sub:"#059669" }
 };
 
-var currentPreset = "보보쌤 살구";
+var currentPreset = "메디블로그 살구";
 var currentTemplate = "bobo_default";
 
 // ═══════════════════════════════════════
@@ -315,7 +315,7 @@ var currentTemplate = "bobo_default";
 // ═══════════════════════════════════════
 var TEMPLATES = {
     "bobo_default": {
-        name: "보보쌤 기본",
+        name: "메디블로그 기본",
         desc: "제목 + 브러시선 + 부제목 + 푸터",
         build: function(p) {
             var titleText = CONFIG.title || '제목을 입력하세요';

@@ -1,4 +1,4 @@
-"""스타일 편집 페이지 - 보보쌤 블로그 스타일 가이드를 웹에서 수정."""
+"""스타일 편집 페이지 - 병원 블로그 스타일 가이드를 웹에서 수정."""
 
 from __future__ import annotations
 
@@ -23,7 +23,7 @@ from naverblog.skills.blog_style import (
 )
 
 st.set_page_config(
-    page_title="스타일 편집 | 보보쌤",
+    page_title="스타일 편집 | 메디블로그",
     page_icon="🎨",
     layout="wide",
 )
@@ -58,7 +58,7 @@ seed_default_styles(db)
 st.markdown("""
 <div class="page-header">
     <h1>스타일 가이드 편집</h1>
-    <p>보보쌤 블로그 문체와 구조 규칙을 수정하세요. 수정 즉시 다음 글 생성에 반영됩니다.</p>
+    <p>병원 블로그 문체와 구조 규칙을 수정하세요. 수정 즉시 다음 글 생성에 반영됩니다.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -182,7 +182,7 @@ with tab_add:
     with st.form("add_category"):
         new_cat_name = st.text_input(
             "카테고리 이름",
-            placeholder="예: 의대 면접 준비",
+            placeholder="예: 지역 내과 감기 증상 안내",
         )
         new_cat_style = st.text_area(
             "스타일 규칙 (Markdown)",

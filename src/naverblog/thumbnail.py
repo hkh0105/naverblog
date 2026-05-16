@@ -1,4 +1,4 @@
-"""블로그 썸네일 이미지 생성 (Pillow) - 보보쌤 미리캔버스 스타일."""
+"""블로그 썸네일 이미지 생성 (Pillow) - 메디블로그 미리캔버스 스타일."""
 
 from __future__ import annotations
 
@@ -8,18 +8,18 @@ from PIL import Image, ImageDraw, ImageFont
 
 from naverblog.watermark import _find_korean_font, _hex_to_rgb
 
-# ─── 색상 프리셋 (보보쌤 블로그 실제 스타일 기반) ───
+# ─── 색상 프리셋 (병원 블로그 실제 스타일 기반) ───
 
 THUMBNAIL_PRESETS: dict[str, dict] = {
-    "보보쌤 기본 (크림)": {
+    "메디블로그 기본 (크림)": {
         "bg_color": "#FDF6EC",
         "text_color": "#1a1a1a",
         "highlight_color": "#FFE066",
         "accent_color": "#7c3aed",
         "branding_color": "#888888",
-        "description": "보보쌤 블로그 실제 스타일",
+        "description": "병원 블로그 실제 스타일",
     },
-    "보보쌤 퍼플": {
+    "메디블로그 퍼플": {
         "bg_color": "#F5F0FF",
         "text_color": "#1a1a1a",
         "highlight_color": "#C4B5FD",
@@ -181,7 +181,7 @@ def render_thumbnail(
     subtitle: str = "",
     subtitle_color: str | None = None,
     category_label: str = "",
-    branding_text: str = "보보쌤의 공부 & 입시 연구소",
+    branding_text: str = "메디블로그 AI 병원 건강정보",
     bg_color: str = "#FDF6EC",
     text_color: str = "#1a1a1a",
     highlight_color: str = "#FFE066",
@@ -198,7 +198,7 @@ def render_thumbnail(
     height: int = 628,
     gradient_end_color: str | None = None,
 ) -> bytes:
-    """보보쌤 스타일 블로그 썸네일을 생성합니다.
+    """병원 글쓰기 스타일 블로그 썸네일을 생성합니다.
 
     title_lines를 제공하면 줄별 개별 스타일링이 적용됩니다.
     title_lines 각 항목: {"text", "color", "highlight", "highlight_color", "y_offset"}

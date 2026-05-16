@@ -18,7 +18,7 @@ inject_secrets()
 from naverblog.watermark import watermark_image, watermark_pdf, _hex_to_rgb
 
 st.set_page_config(
-    page_title="워터마크 | 보보쌤",
+    page_title="워터마크 | 메디블로그",
     page_icon="💧",
     layout="wide",
 )
@@ -92,7 +92,7 @@ POSITION_OPTIONS = {
 
 col1, col2 = st.columns(2)
 with col1:
-    wm_text = st.text_area("워터마크 텍스트", value="의대 간 보보쌤의 공부 & 입시 연구소", height=68, help="여러 줄 입력 가능", key="wm_text_v2")
+    wm_text = st.text_area("워터마크 텍스트", value="메디블로그 AI | 병원 건강정보", height=68, help="여러 줄 입력 가능", key="wm_text_v2")
 with col2:
     wm_position = st.selectbox("배치 스타일", list(POSITION_OPTIONS.keys()), index=1, key="wm_pos_v2")
 

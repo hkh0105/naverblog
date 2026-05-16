@@ -1,4 +1,4 @@
-"""네이버 블로그 글 생성기 - Streamlit 웹 앱."""
+"""네이버블로그 글 생성기 - Streamlit 웹 앱."""
 
 from __future__ import annotations
 
@@ -32,52 +32,40 @@ __version__ = "0.2.0"
 
 # ─── 카테고리별 스킬 프리셋 ───
 CATEGORY_SKILL_PRESETS: dict[str, dict] = {
-    "과목별 공부 로직": {
+    "지역 진료 키워드": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
-        "note": "교재/학습법 최신 정보 + 기존 글 참조 + SEO",
+        "note": "지역 검색 의도 + 병원 문체 + SEO",
     },
-    "입시 파이널 : 면접": {
+    "증상 설명 콘텐츠": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
-        "note": "면접 기출 트렌드 + 기존 글 참조 + SEO",
+        "note": "환자 눈높이 증상 설명 + 위험 신호 안내",
     },
-    "입시 파이널 : 자기소개서": {
-        "search": False, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
-        "note": "스타일 가이드 + 기존 글 참조 + SEO",
-    },
-    "생기부 : 수시의 모든 것": {
+    "검사·시술 안내": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
-        "note": "최신 세특 트렌드 + 기존 글 참조 + SEO",
+        "note": "과장 없이 검사/시술 과정과 주의사항 설명",
     },
-    "77일만에 의대 가기": {
-        "search": False, "blog_style": True, "reference_posts": True, "image_gen": True, "keyword_analysis": False,
-        "note": "개인 경험 스토리 + 기존 글 참조 + 이미지",
-    },
-    "[전략] 입시 설계의 정석": {
+    "건강검진·예방접종": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
-        "note": "최신 입시 데이터 + 기존 글 참조 + SEO",
+        "note": "시기성 정보 + 예약 전환형 안내",
     },
-    "시기별 로드맵": {
-        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
-        "note": "시기별 최신 정보 + 기존 글 참조 + SEO",
-    },
-    "학원 / 과외의 모든 것": {
-        "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
-        "note": "학원 정보 + 기존 글 참조 + SEO",
-    },
-    "블로그 활용법 (후기 zip)": {
+    "병원 이용 안내": {
         "search": False, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": False,
-        "note": "후기 정리 + 기존 글 참조",
+        "note": "진료시간, 예약, 내원 준비물 중심",
     },
-    "입시 정보 모음": {
+    "FAQ 콘텐츠": {
         "search": True, "blog_style": True, "reference_posts": True, "image_gen": False, "keyword_analysis": True,
-        "note": "입시 데이터 + 기존 글 참조 + SEO",
+        "note": "환자 질문 기반 Q&A 구조",
+    },
+    "의료광고 표현 점검": {
+        "search": False, "blog_style": True, "reference_posts": False, "image_gen": False, "keyword_analysis": False,
+        "note": "과장·보장·비교우위 표현 점검",
     },
 }
 
 # ─── 페이지 설정 ───
 st.set_page_config(
-    page_title="보보쌤 블로그 글 생성기",
-    page_icon="✍️",
+    page_title="메디블로그 AI 마케팅 툴",
+    page_icon="🏥",
     layout="wide",
 )
 
@@ -286,25 +274,10 @@ if db_fallback_reason:
 seed_default_styles(db)
 registry = get_skill_registry(db)
 
-# ─── 자동 크롤링 ───
-try:
-    should_auto_crawl = db.count_blog_posts() == 0
-except Exception as exc:
-    should_auto_crawl = False
-    st.warning(f"레퍼런스 글 개수를 확인하지 못했습니다: {exc}")
-
-if should_auto_crawl:
-    from naverblog.crawler import crawl_blog
-    with st.spinner("첫 실행: 보보쌤 블로그 글 50개를 수집하고 있습니다..."):
-        try:
-            result = crawl_blog(db)
-        except Exception as exc:
-            result = {"success": 0, "skip": 0, "fail": 0}
-            st.warning(f"자동 크롤링을 완료하지 못했습니다: {exc}")
-    if result["success"] > 0:
-        st.toast(f"블로그 글 {result['success']}개 자동 수집 완료!", icon="✅")
-        st.cache_resource.clear()
-        st.rerun()
+# ─── 레퍼런스 글 ───
+# 병원별 문체는 직접 등록한 레퍼런스 글을 우선 사용합니다.
+# 외부 블로그 자동 수집은 출처 혼선을 줄이기 위해 기본 비활성화합니다.
+should_auto_crawl = False
 
 
 # ═══════════════════════════════════════
@@ -333,7 +306,7 @@ with st.sidebar:
     )
     custom_category = ""
     if selected_category_label == "직접 입력":
-        custom_category = st.text_input("카테고리 이름", placeholder="예: 의대 입시 전략")
+        custom_category = st.text_input("카테고리 이름", placeholder="예: 강남 내과 감기")
     selected_category = (
         custom_category if selected_category_label == "직접 입력"
         else "" if selected_category_label == "선택 안함"
@@ -388,10 +361,10 @@ with st.sidebar:
     default_keyword = preset.get("keyword_analysis", False) if preset else False
 
     use_search = st.toggle("웹 검색", value=default_search, help="Tavily API로 최신 정보 검색")
-    use_blog_style = st.toggle("보보쌤 스타일", value=default_style, help="카테고리별 문체/구조 적용")
+    use_blog_style = st.toggle("병원 글쓰기 스타일", value=default_style, help="카테고리별 문체/구조 적용")
     use_ref_posts = st.toggle(
         "기존 글 참조", value=default_ref,
-        help=f"보보쌤 블로그 글 {db.count_blog_posts()}개를 참조",
+        help=f"병원 블로그 글 {db.count_blog_posts()}개를 참조",
     )
     use_keyword = st.toggle(
         "키워드 분석", value=default_keyword,
@@ -451,12 +424,12 @@ with st.sidebar:
 # ─── 헤더 ───
 st.markdown(f"""
 <div class="hero">
-    <h1>보보쌤 블로그 글 생성기</h1>
-    <p class="subtitle">주제를 입력하면 보보쌤 스타일로 네이버 블로그 글을 자동 생성합니다</p>
+    <h1>메디블로그 AI 마케팅 툴</h1>
+    <p class="subtitle">주제를 입력하면 병원 글쓰기 스타일로 네이버블로그 글을 자동 생성합니다</p>
     <div class="meta">
         <span class="badge">v{__version__}</span>
-        <span class="badge">👸 보윤공주 에디션</span>
-        <span class="love">자기 사랑해 💕</span>
+        <span class="badge">👸 개원의 마케팅 에디션</span>
+        <span class="love"></span>
     </div>
 </div>
 """, unsafe_allow_html=True)
@@ -508,7 +481,7 @@ with st.expander("🖼️ 이미지 설정", expanded=False):
 
         st.markdown("**워터마크**")
         use_watermark = st.toggle("이미지에 워터마크 넣기", value=False)
-        wm_text = "보보쌤 | byhur99"
+        wm_text = "메디블로그 AI | 병원 건강정보"
         if use_watermark:
             wm_text = st.text_input("워터마크 텍스트", value=wm_text, key="main_wm_text")
 
@@ -517,16 +490,16 @@ with st.expander("🖼️ 이미지 설정", expanded=False):
 with st.form("generate_form"):
     topic = st.text_area(
         "블로그 주제",
-        placeholder="예: 독학재수 3개월 수능 국어 공부법, 에어팟 프로 2 솔직 리뷰",
+        placeholder="예: 강남 내과 감기 증상과 병원 방문이 필요한 경우",
         height=68,
     )
     extra = st.text_area(
         "추가 지시사항 (선택)",
-        placeholder="예: 가성비 위주로 작성해줘, 구체적인 교재 추천 포함",
+        placeholder="예: 원장이 직접 설명하는 느낌으로, 과장 표현 없이 환자 눈높이에 맞춰줘",
         height=68,
     )
     submitted = st.form_submit_button(
-        "블로그 글 생성하기",
+        "병원 블로그 글 생성하기",
         type="primary",
         use_container_width=True,
     )
@@ -543,10 +516,10 @@ if submitted and topic.strip():
             name="커스텀",
             description=custom_persona_text,
             system_prompt=(
-                f"당신은 '보보쌤'입니다. 서울대를 졸업하고 직장 생활을 하다가 77일 만에 의대에 합격한 "
-                f"20대 중후반 여성 입시 전문가입니다.\n\n"
+                "당신은 개원의의 병원 블로그 콘텐츠를 보조하는 의료 콘텐츠 마케팅 에디터입니다.\n\n"
                 f"다음 대상을 위해 블로그 글을 작성합니다: {custom_persona_text}. "
-                "이 독자층에 맞는 문체, 어휘, 톤으로 작성합니다."
+                "이 독자층에 맞는 문체, 어휘, 톤으로 작성하되 진단·치료 효과를 단정하거나 과장하지 않습니다. "
+                "의사가 직접 검토한 듯 신뢰도 높은 정보형 문장으로 구성합니다."
             ),
         )
     else:
@@ -682,7 +655,7 @@ if submitted and topic.strip():
     if has_any_images:
         with tabs[tab_idx]:
             st.caption(
-                "네이버 블로그 에디터에서 '사진' 버튼으로 업로드하세요. "
+                "네이버블로그 에디터에서 '사진' 버튼으로 업로드하세요. "
                 "[이미지 N] 마커 위치에 삽입하면 됩니다."
             )
 
@@ -744,7 +717,7 @@ if submitted and topic.strip():
         if use_ref_posts:
             with st.expander(f"레퍼런스 글 ({ref_post_count}개)", expanded=True):
                 prompt_text = generation.prompt_used
-                ref_start = prompt_text.find("## 보보쌤 기존 블로그 글 레퍼런스")
+                ref_start = prompt_text.find("## 병원 레퍼런스 글 레퍼런스")
                 if ref_start >= 0:
                     ref_end = prompt_text.find("\n## ", ref_start + 10)
                     if ref_end < 0:
@@ -839,9 +812,9 @@ else:
 st.markdown("")
 st.markdown(f"""
 <div class="app-footer">
-    보보쌤 블로그 스타일 기반 · Streamlit + LiteLLM + Imagen<br>
-    👸 <span class="love-msg">보윤공주</span> · <span class="love-msg">보윤 빗취</span><br>
-    <span class="love-msg">자기 사랑해 💕</span><br>
+    병원 블로그 스타일 기반 · Streamlit + LiteLLM + Imagen<br>
+    👸 <span class="love-msg"></span> · <span class="love-msg"></span><br>
+    <span class="love-msg"></span><br>
     <span class="ver">v{__version__}</span>
 </div>
 """, unsafe_allow_html=True)
