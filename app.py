@@ -22,6 +22,8 @@ from naverblog.image_gen import (
     generate_blog_images,
     get_image_model_id,
     has_image_api_key,
+    list_image_quality_options,
+    list_image_size_options,
     list_image_model_names,
 )
 from naverblog.llm import (
@@ -314,7 +316,7 @@ with st.sidebar:
     default_model_index = model_names.index(default_model_name) if default_model_name in model_names else 0
     selected_model = st.selectbox(
         "AI 모델", model_names, index=default_model_index, label_visibility="collapsed",
-        help="기본값은 Claude Opus 4.8입니다. GPT-5.5는 실제 호출 검증 후 기본값으로 전환합니다.",
+        help="기본값은 GPT-5.5입니다. OpenAI quota 문제가 있으면 Claude Opus 4.8로 바꿔 사용할 수 있습니다.",
     )
     if not has_required_api_key(selected_model):
         st.caption(f"키 필요: {format_missing_api_key_message(selected_model)}")
@@ -506,9 +508,34 @@ with st.expander("🖼️ 이미지 설정", expanded=False):
             if not has_image_api_key(selected_image_model_id):
                 st.warning(format_missing_image_api_key_message(selected_image_model_id))
             num_images = st.slider("생성할 이미지 수", 1, 4, 2)
+            image_size_options = list_image_size_options()
+            image_quality_options = list_image_quality_options()
+            size_col, quality_col = st.columns(2)
+            with size_col:
+                selected_image_size = st.selectbox(
+                    "이미지 크기",
+                    image_size_options,
+                    index=0,
+                    help="GPT Image 모델 호출의 size 값입니다. Google 이미지 모델은 자체 기본값을 사용합니다.",
+                )
+            with quality_col:
+                selected_image_quality = st.selectbox(
+                    "이미지 품질",
+                    image_quality_options,
+                    index=0,
+                    format_func=lambda value: {
+                        "low": "low (저비용)",
+                        "medium": "medium",
+                        "high": "high",
+                        "auto": "auto",
+                    }.get(value, value),
+                    help="GPT Image 모델 호출의 quality 값입니다. low가 가장 저렴합니다.",
+                )
         else:
             selected_image_model_name = "GPT Image 2 (덕테이프)"
             num_images = 2
+            selected_image_size = "1024x1024"
+            selected_image_quality = "low"
 
         st.markdown("**워터마크**")
         use_watermark = st.toggle("이미지에 워터마크 넣기", value=False)
@@ -642,6 +669,8 @@ if submitted and topic.strip():
                     topic=topic.strip(),
                     num_images=num_images,
                     model=image_model_id,
+                    size=selected_image_size,
+                    quality=selected_image_quality,
                 )
             except Exception as e:
                 st.warning(f"이미지 생성 실패: {e}")

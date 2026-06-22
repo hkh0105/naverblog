@@ -18,6 +18,18 @@ IMAGE_MODEL_REGISTRY: dict[str, str] = {
     "Gemini Flash Image": "gemini-2.5-flash-image",
 }
 
+IMAGE_SIZE_OPTIONS = [
+    "1024x1024",
+    "1536x1024",
+    "1024x1536",
+    "2048x2048",
+    "2048x1152",
+    "2160x3840",
+    "3840x2160",
+    "auto",
+]
+IMAGE_QUALITY_OPTIONS = ["low", "medium", "high", "auto"]
+
 
 def _is_openai_image_model(model: str) -> bool:
     return model.startswith("openai/") or model.startswith("gpt-image-")
@@ -123,6 +135,8 @@ def generate_blog_images(
     topic: str,
     num_images: int = 3,
     model: str = "openai/gpt-image-2",
+    size: str = "1024x1024",
+    quality: str = "low",
 ) -> list[GeneratedImage]:
     """블로그 글에 맞는 이미지를 생성합니다.
 
@@ -130,6 +144,8 @@ def generate_blog_images(
         topic: 블로그 주제
         num_images: 생성할 이미지 수 (1~4)
         model: 이미지 생성 모델 ID
+        size: OpenAI 이미지 크기
+        quality: OpenAI 이미지 품질
 
     Returns:
         생성된 이미지 리스트
@@ -152,8 +168,8 @@ def generate_blog_images(
                 response = client.images.generate(
                     model=model_id,
                     prompt=prompt,
-                    size="1024x1024",
-                    quality="low",
+                    size=size,
+                    quality=quality,
                 )
                 image_base64 = response.data[0].b64_json
                 images.append(
@@ -221,6 +237,16 @@ def generate_blog_images(
 def list_image_model_names() -> list[str]:
     """사용 가능한 이미지 모델 이름 목록."""
     return list(IMAGE_MODEL_REGISTRY.keys())
+
+
+def list_image_size_options() -> list[str]:
+    """사용 가능한 OpenAI 이미지 크기 옵션."""
+    return IMAGE_SIZE_OPTIONS.copy()
+
+
+def list_image_quality_options() -> list[str]:
+    """사용 가능한 OpenAI 이미지 품질 옵션."""
+    return IMAGE_QUALITY_OPTIONS.copy()
 
 
 def get_image_model_id(name: str) -> str:

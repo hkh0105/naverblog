@@ -19,9 +19,7 @@ MODEL_REGISTRY: dict[str, str] = {
     "Gemini Flash": "gemini/gemini-2.5-flash",
 }
 
-DEFAULT_MODEL_NAME = "Claude Opus 4.8"
-VERIFIED_GPT55_MODEL_NAME = "GPT-5.5"
-GPT55_VERIFIED_ENV = "NAVERBLOG_GPT55_VERIFIED"
+DEFAULT_MODEL_NAME = "GPT-5.5"
 DEFAULT_MODEL_ENV = "NAVERBLOG_DEFAULT_MODEL"
 PROVIDER_ENV_VARS = {
     "anthropic": "ANTHROPIC_API_KEY",
@@ -95,6 +93,12 @@ def format_llm_exception_message(name: str, exc: Exception) -> str:
             "급하면 `Claude Opus 4.8`로 바꿔 생성하세요."
         )
 
+    if provider == "openai" and "temperature" in message and "Only the default" in message:
+        return (
+            "이 OpenAI 모델은 temperature 기본값만 지원합니다. "
+            "앱 호출 설정을 다시 확인한 뒤 재시도해주세요."
+        )
+
     if "Missing credentials" in message:
         return format_missing_api_key_message(name)
 
@@ -104,22 +108,18 @@ def format_llm_exception_message(name: str, exc: Exception) -> str:
 def get_default_model_name() -> str:
     """앱 기본 모델을 반환.
 
-    GPT-5.5는 실제 호출 검증 후 NAVERBLOG_GPT55_VERIFIED=1일 때만 기본값으로 사용합니다.
+    NAVERBLOG_DEFAULT_MODEL에 유효한 모델명을 지정하면 앱 기본값을 덮어쓸 수 있습니다.
     """
     explicit = os.environ.get(DEFAULT_MODEL_ENV, "").strip()
     if explicit in MODEL_REGISTRY:
         return explicit
 
-    gpt55_verified = os.environ.get(GPT55_VERIFIED_ENV, "").strip().lower()
-    if gpt55_verified in {"1", "true", "yes", "y", "on"}:
-        return VERIFIED_GPT55_MODEL_NAME
-
     return DEFAULT_MODEL_NAME
 
 
 def _should_omit_sampling_params(model_id: str) -> bool:
-    """일부 Claude 모델은 비기본 sampling parameter를 거부합니다."""
-    return model_id.startswith("claude-opus-4-8")
+    """일부 최신 모델은 비기본 sampling parameter를 거부합니다."""
+    return model_id.startswith(("claude-opus-4-8", "gpt-5"))
 
 
 def generate(
