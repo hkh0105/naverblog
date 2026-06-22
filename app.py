@@ -18,8 +18,10 @@ inject_secrets()
 
 from naverblog.database import Database, create_database
 from naverblog.image_gen import (
+    format_missing_image_api_key_message,
     generate_blog_images,
     get_image_model_id,
+    has_image_api_key,
     list_image_model_names,
 )
 from naverblog.llm import (
@@ -435,8 +437,9 @@ with st.sidebar:
     with st.expander("API 키 설정"):
         st.code(
             "ANTHROPIC_API_KEY=sk-ant-...\n"
-            "OPENAI_API_KEY=sk-...  # GPT-5.5 / GPT-4o\n"
-            "GEMINI_API_KEY=AI...\n"
+            "OPENAI_API_KEY=sk-...  # GPT-5.5 / GPT-4o / GPT Image 2\n"
+            "GEMINI_API_KEY=AI...  # Google Imagen/Gemini 이미지 생성\n"
+            "GOOGLE_API_KEY=AI...  # GEMINI_API_KEY 대신 사용 가능\n"
             "TAVILY_API_KEY=tvly-...",
             language="bash",
         )
@@ -497,11 +500,14 @@ with st.expander("🖼️ 이미지 설정", expanded=False):
             image_model_names = list_image_model_names()
             selected_image_model_name = st.selectbox(
                 "이미지 모델", image_model_names, index=0,
-                help="GEMINI_API_KEY 필요",
+                help="OpenAI 모델은 OPENAI_API_KEY, Google 모델은 GEMINI_API_KEY 또는 GOOGLE_API_KEY 필요",
             )
+            selected_image_model_id = get_image_model_id(selected_image_model_name)
+            if not has_image_api_key(selected_image_model_id):
+                st.warning(format_missing_image_api_key_message(selected_image_model_id))
             num_images = st.slider("생성할 이미지 수", 1, 4, 2)
         else:
-            selected_image_model_name = "Imagen 3"
+            selected_image_model_name = "GPT Image 2 (덕테이프)"
             num_images = 2
 
         st.markdown("**워터마크**")

@@ -77,6 +77,30 @@ def format_missing_api_key_message(name: str) -> str:
     )
 
 
+def format_llm_exception_message(name: str, exc: Exception) -> str:
+    """Provider 오류를 사용자 친화적인 메시지로 변환."""
+    message = str(exc)
+    provider = get_model_provider(name)
+
+    if provider == "openai" and "You exceeded your current quota" in message:
+        return (
+            "OpenAI API 키는 인식됐지만 현재 quota/크레딧/프로젝트 예산이 부족합니다. "
+            "OpenAI Platform의 Billing, Usage, Limits에서 결제수단·크레딧·프로젝트 월 예산을 확인해주세요. "
+            "해결 전에는 AI 모델을 `Claude Opus 4.8`로 바꿔 생성할 수 있습니다."
+        )
+
+    if provider == "openai" and "RateLimitError" in message:
+        return (
+            "OpenAI 요청 한도에 걸렸습니다. 잠시 후 다시 시도하거나 OpenAI Platform의 프로젝트 rate limit/budget을 확인해주세요. "
+            "급하면 `Claude Opus 4.8`로 바꿔 생성하세요."
+        )
+
+    if "Missing credentials" in message:
+        return format_missing_api_key_message(name)
+
+    return f"{name} 호출에 실패했습니다: {message}"
+
+
 def get_default_model_name() -> str:
     """앱 기본 모델을 반환.
 
@@ -122,7 +146,10 @@ def generate(
     if not _should_omit_sampling_params(model_id):
         kwargs["temperature"] = temperature
 
-    response = completion(**kwargs)
+    try:
+        response = completion(**kwargs)
+    except Exception as exc:
+        raise RuntimeError(format_llm_exception_message(model, exc)) from exc
     return response.choices[0].message.content
 
 
