@@ -1,11 +1,11 @@
 -- ============================================================
--- 병원 블로그 생성기 - Supabase PostgreSQL 스키마
+-- 보보쌤 블로그 글 생성기 - Supabase PostgreSQL 스키마
 -- Supabase Dashboard > SQL Editor에서 실행하세요.
 -- ============================================================
 
 -- 1. personas
 CREATE TABLE IF NOT EXISTS personas (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     name TEXT UNIQUE NOT NULL,
     description TEXT NOT NULL,
     system_prompt TEXT NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS personas (
 
 -- 2. generations
 CREATE TABLE IF NOT EXISTS generations (
-    id BIGSERIAL PRIMARY KEY,
+    id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
     topic TEXT NOT NULL,
     persona_name TEXT NOT NULL,
     llm_model TEXT NOT NULL,
@@ -81,6 +81,7 @@ CREATE TABLE IF NOT EXISTS keyword_cache (
 -- ALTER TABLE app_config ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE blog_styles ENABLE ROW LEVEL SECURITY;
 -- ALTER TABLE blog_posts ENABLE ROW LEVEL SECURITY;
+-- ALTER TABLE keyword_cache ENABLE ROW LEVEL SECURITY;
 
 -- CREATE POLICY "Allow all for service role" ON personas FOR ALL USING (true);
 -- CREATE POLICY "Allow all for service role" ON generations FOR ALL USING (true);
@@ -88,6 +89,7 @@ CREATE TABLE IF NOT EXISTS keyword_cache (
 -- CREATE POLICY "Allow all for service role" ON app_config FOR ALL USING (true);
 -- CREATE POLICY "Allow all for service role" ON blog_styles FOR ALL USING (true);
 -- CREATE POLICY "Allow all for service role" ON blog_posts FOR ALL USING (true);
+-- CREATE POLICY "Allow all for service role" ON keyword_cache FOR ALL USING (true);
 
 -- ============================================================
 -- 인덱스 (성능 최적화)
