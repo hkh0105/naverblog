@@ -94,7 +94,7 @@ def _get_reportlab_font() -> str:
 
 def watermark_image(
     image_data: bytes,
-    text: str = "메디블로그 AI | 병원 건강정보",
+    text: str = "보보쌤 | 의대 간 보보쌤의 공부 & 입시 연구소",
     opacity: int = 80,
     position: str = "bottom-right",
     font_size: int = 0,
@@ -211,7 +211,7 @@ def _draw_diagonal(
 
 def watermark_pdf(
     pdf_data: bytes,
-    text: str = "메디블로그 AI | 병원 건강정보",
+    text: str = "보보쌤 | 의대 간 보보쌤의 공부 & 입시 연구소",
     opacity: float = 0.15,
     position: str = "diagonal-tiled",
     font_size: int = 50,

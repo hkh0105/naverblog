@@ -18,7 +18,7 @@ from naverblog.config import inject_secrets
 inject_secrets()
 
 st.set_page_config(
-    page_title="썸네일 제작 | 메디블로그",
+    page_title="썸네일 제작 | 보보쌤",
     page_icon="🖼️",
     layout="wide",
 )
@@ -29,7 +29,7 @@ st.markdown("""
     html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; }
     .block-container { max-width: 1200px; padding-top: 1rem; padding-bottom: 0; }
     .page-header {
-        background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #c4b5fd 100%);
+        background: linear-gradient(135deg, #0f766e 0%, #c85a3a 58%, #f2a65a 100%);
         padding: 1.5rem 2rem;
         border-radius: 1rem;
         color: white;
@@ -61,7 +61,7 @@ config_json = json.dumps({
     "category": prefill_category,
     "title": prefill_title,
     "subtitle": prefill_subtitle,
-    "branding": "메디블로그 AI 병원 건강정보",
+    "branding": "의대 간 보보쌤의 공부 & 입시 연구소",
 }, ensure_ascii=False)
 
 CANVAS_HTML = r"""
@@ -91,7 +91,7 @@ body { font-family: 'Noto Sans KR', sans-serif; background: #f8f9fa; overflow-x:
     align-items: center;
 }
 #template-bar .bar-label {
-    font-size: 11px; font-weight: 700; color: #7c3aed;
+    font-size: 11px; font-weight: 700; color: #0f766e;
     margin-right: 4px; white-space: nowrap;
 }
 .tmpl-btn {
@@ -121,8 +121,8 @@ body { font-family: 'Noto Sans KR', sans-serif; background: #f8f9fa; overflow-x:
     font-size: 11px; cursor: pointer; transition: all 0.15s;
     font-family: 'Noto Sans KR', sans-serif; font-weight: 500;
 }
-.preset-btn:hover { border-color: #a78bfa; }
-.preset-btn.active { border-color: #7c3aed; background: #f5f0ff; color: #7c3aed; }
+.preset-btn:hover { border-color: #5eead4; }
+.preset-btn.active { border-color: #0f766e; background: #ecfdf5; color: #0f766e; }
 
 /* ── 툴바 ── */
 .toolbar-row {
@@ -152,11 +152,11 @@ body { font-family: 'Noto Sans KR', sans-serif; background: #f8f9fa; overflow-x:
     font-family: 'Noto Sans KR'; transition: all 0.15s; white-space: nowrap;
 }
 .tb-btn:hover { background: #f3f4f6; }
-.tb-btn.primary { background: #7c3aed; color: white; border-color: #7c3aed; }
-.tb-btn.primary:hover { background: #6d28d9; }
+.tb-btn.primary { background: #0f766e; color: white; border-color: #0f766e; }
+.tb-btn.primary:hover { background: #115e59; }
 .tb-btn.danger { color: #ef4444; border-color: #fca5a5; }
 .tb-btn.danger:hover { background: #fef2f2; }
-.tb-btn.active { background: #ede9fe; border-color: #a78bfa; color: #7c3aed; }
+.tb-btn.active { background: #ecfdf5; border-color: #5eead4; color: #0f766e; }
 .tb-btn[disabled] { opacity: 0.4; pointer-events: none; }
 #selected-info { font-size: 11px; color: #888; font-weight: 500; min-width: 60px; }
 #obj-controls { display: none; align-items: center; gap: 6px; flex-wrap: wrap; }
@@ -172,7 +172,7 @@ body { font-family: 'Noto Sans KR', sans-serif; background: #f8f9fa; overflow-x:
 
 /* ── 스냅 가이드라인 ── */
 .guide-line {
-    position: absolute; background: #7c3aed; z-index: 999; pointer-events: none; opacity: 0.6;
+    position: absolute; background: #0f766e; z-index: 999; pointer-events: none; opacity: 0.6;
 }
 .guide-line.horizontal { height: 1px; left: 0; right: 0; }
 .guide-line.vertical { width: 1px; top: 0; bottom: 0; }
@@ -212,6 +212,7 @@ body { font-family: 'Noto Sans KR', sans-serif; background: #f8f9fa; overflow-x:
     <button class="tb-btn" id="addCircleBtn">＋ 원형</button>
     <button class="tb-btn" id="addLineBtn">＋ 구분선</button>
     <button class="tb-btn" id="addBrushLineBtn">＋ 브러시 선</button>
+    <button class="tb-btn" id="addTapeBtn">＋ 덕테이프</button>
     <button class="tb-btn" id="imgUploadBtn">＋ 이미지</button>
     <input type="file" id="imgUploadInput" accept="image/*">
     <div style="flex:1"></div>
@@ -297,8 +298,8 @@ body { font-family: 'Noto Sans KR', sans-serif; background: #f8f9fa; overflow-x:
 var CONFIG = __CONFIG_JSON__;
 
 var PRESETS = {
-    "메디블로그 살구": { bg:"#F5C6AA", text:"#1a1a1a", hl:"#E8967D", accent:"#C85A3A", brand:"#8B5E3C", sub:"#C85A3A" },
-    "메디블로그 크림": { bg:"#FDF6EC", text:"#1a1a1a", hl:"#FFE066", accent:"#7c3aed", brand:"#888888", sub:"#7c3aed" },
+    "보보쌤 살구": { bg:"#F5C6AA", text:"#1a1a1a", hl:"#E8967D", accent:"#C85A3A", brand:"#8B5E3C", sub:"#C85A3A" },
+    "보보쌤 크림": { bg:"#FDF6EC", text:"#1a1a1a", hl:"#FFE066", accent:"#C85A3A", brand:"#8B5E3C", sub:"#C85A3A" },
     "퍼플":       { bg:"#F5F0FF", text:"#1a1a1a", hl:"#C4B5FD", accent:"#7c3aed", brand:"#7c3aed", sub:"#7c3aed" },
     "화이트":     { bg:"#FFFFFF", text:"#1a1a1a", hl:"#FFE066", accent:"#3B82F6", brand:"#999999", sub:"#3B82F6" },
     "핑크":       { bg:"#FFF0F5", text:"#1a1a1a", hl:"#FBCFE8", accent:"#EC4899", brand:"#EC4899", sub:"#EC4899" },
@@ -307,7 +308,7 @@ var PRESETS = {
     "민트":       { bg:"#F0FDF4", text:"#1a1a1a", hl:"#86EFAC", accent:"#059669", brand:"#059669", sub:"#059669" }
 };
 
-var currentPreset = "메디블로그 살구";
+var currentPreset = "보보쌤 살구";
 var currentTemplate = "bobo_default";
 
 // ═══════════════════════════════════════
@@ -315,7 +316,7 @@ var currentTemplate = "bobo_default";
 // ═══════════════════════════════════════
 var TEMPLATES = {
     "bobo_default": {
-        name: "메디블로그 기본",
+        name: "보보쌤 기본",
         desc: "제목 + 브러시선 + 부제목 + 푸터",
         build: function(p) {
             var titleText = CONFIG.title || '제목을 입력하세요';
@@ -617,6 +618,90 @@ var TEMPLATES = {
                 left: CW / 2, top: CH - 100,
                 fontFamily: 'Noto Sans KR',
                 fontSize: 20, fontWeight: '400',
+                fill: p.brand, etype: 'branding',
+            });
+        }
+    },
+    "duct_tape_note": {
+        name: "덕테이프 메모",
+        desc: "찢긴 테이프 + 메모지 강조",
+        build: function(p) {
+            var paper = new fabric.Rect({
+                left: CW * 0.12, top: CH * 0.15,
+                width: CW * 0.76, height: CH * 0.62,
+                fill: '#fffdf7',
+                stroke: '#ead7b8',
+                strokeWidth: 2,
+                rx: 18, ry: 18,
+                shadow: new fabric.Shadow({
+                    color: 'rgba(80, 48, 24, 0.16)',
+                    blur: 18,
+                    offsetX: 0,
+                    offsetY: 8,
+                }),
+                _etype: 'decoration',
+            });
+            canvas.add(paper);
+
+            addDuctTape({
+                left: CW * 0.32,
+                top: CH * 0.14,
+                width: CW * 0.28,
+                height: 56,
+                angle: -7,
+                color: '#d9d3c1',
+                opacity: 0.92,
+            });
+            addDuctTape({
+                left: CW * 0.68,
+                top: CH * 0.14,
+                width: CW * 0.28,
+                height: 56,
+                angle: 7,
+                color: '#e8d6b8',
+                opacity: 0.92,
+            });
+
+            if (CONFIG.category) {
+                createText(CONFIG.category, {
+                    left: CW / 2, top: CH * 0.25,
+                    fontFamily: 'Noto Sans KR',
+                    fontSize: 24, fontWeight: '700',
+                    fill: p.accent, etype: 'category',
+                });
+            }
+
+            var titleText = CONFIG.title || '제목을 입력하세요';
+            createText(titleText, {
+                left: CW / 2, top: CH * 0.36,
+                fontFamily: 'Cafe24Dangdanghae',
+                fontSize: 82, fontWeight: '400',
+                fill: p.text, etype: 'title',
+            });
+
+            if (CONFIG.subtitle) {
+                createText(CONFIG.subtitle, {
+                    left: CW / 2, top: CH * 0.59,
+                    fontFamily: 'Noto Sans KR',
+                    fontSize: 30, fontWeight: '500',
+                    fill: p.sub || p.accent, etype: 'subtitle',
+                });
+            }
+
+            addDuctTape({
+                left: CW * 0.5,
+                top: CH * 0.76,
+                width: CW * 0.36,
+                height: 44,
+                angle: 1,
+                color: '#f0dfbf',
+                opacity: 0.75,
+            });
+
+            createText(CONFIG.branding, {
+                left: CW / 2, top: CH * 0.79,
+                fontFamily: 'Noto Sans KR',
+                fontSize: 20, fontWeight: '500',
                 fill: p.brand, etype: 'branding',
             });
         }
@@ -987,6 +1072,76 @@ function addBrushLine(opts) {
 }
 
 // ═══════════════════════════════════════
+// 덕테이프 / 마스킹테이프 장식
+// ═══════════════════════════════════════
+function addDuctTape(opts) {
+    opts = opts || {};
+    var w = opts.width || Math.min(CW * 0.34, 360);
+    var h = opts.height || 58;
+    var tooth = Math.max(7, Math.round(h * 0.18));
+    var color = opts.color || '#d9d3c1';
+    var edge = opts.edge || 'rgba(94, 83, 67, 0.22)';
+    var opacity = opts.opacity || 0.9;
+
+    var points = [
+        {x: 0, y: tooth},
+        {x: tooth * 0.9, y: 0},
+        {x: w - tooth * 0.7, y: 0},
+        {x: w, y: tooth * 0.85},
+        {x: w - tooth * 0.45, y: h * 0.34},
+        {x: w, y: h * 0.58},
+        {x: w - tooth * 0.75, y: h},
+        {x: tooth * 0.7, y: h},
+        {x: 0, y: h - tooth},
+        {x: tooth * 0.45, y: h * 0.62},
+        {x: 0, y: h * 0.36},
+    ];
+
+    var body = new fabric.Polygon(points, {
+        left: 0,
+        top: 0,
+        fill: color,
+        stroke: edge,
+        strokeWidth: 1,
+        opacity: opacity,
+        objectCaching: false,
+    });
+
+    var fibers = [];
+    for (var x = 12; x < w - 12; x += 28) {
+        fibers.push(new fabric.Line([x, h - 5, x + h * 0.45, 5], {
+            stroke: 'rgba(255,255,255,0.28)',
+            strokeWidth: 2,
+            opacity: 0.8,
+            selectable: false,
+            evented: false,
+        }));
+    }
+    fibers.push(new fabric.Line([w * 0.08, h * 0.32, w * 0.92, h * 0.26], {
+        stroke: 'rgba(92, 72, 52, 0.16)',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+    }));
+    fibers.push(new fabric.Line([w * 0.1, h * 0.68, w * 0.9, h * 0.72], {
+        stroke: 'rgba(92, 72, 52, 0.12)',
+        strokeWidth: 1,
+        selectable: false,
+        evented: false,
+    }));
+
+    var group = new fabric.Group([body].concat(fibers), {
+        left: (opts.left || CW / 2) - w / 2,
+        top: (opts.top || CH / 2) - h / 2,
+        angle: opts.angle || -5,
+        _etype: 'tape',
+        objectCaching: false,
+    });
+    canvas.add(group);
+    return group;
+}
+
+// ═══════════════════════════════════════
 // 초기 요소 생성 (기본 템플릿 사용)
 // ═══════════════════════════════════════
 function initElements() {
@@ -1017,7 +1172,7 @@ function showProps(obj) {
     if (!obj || obj._isHL || obj._isGrid) return;
     propBar.style.display = 'flex';
 
-    var types = { title:'제목', subtitle:'부제목', category:'카테고리', branding:'푸터', separator:'구분선', brushline:'브러시선', decoration:'장식', custom:'텍스트', shape:'도형', circle:'원형' };
+    var types = { title:'제목', subtitle:'부제목', category:'카테고리', branding:'푸터', separator:'구분선', brushline:'브러시선', tape:'덕테이프', decoration:'장식', custom:'텍스트', shape:'도형', circle:'원형' };
     document.getElementById('selected-info').textContent = (types[obj._etype] || obj.type) + ' 선택됨';
 
     var isText = (obj.type === 'i-text' || obj.type === 'text');
@@ -1391,6 +1546,20 @@ document.getElementById('addLineBtn').onclick = function() {
 document.getElementById('addBrushLineBtn').onclick = function() {
     var bl = addBrushLine({ y: CH / 2, color: PRESETS[currentPreset].hl, strokeWidth: 8 });
     canvas.setActiveObject(bl);
+    canvas.renderAll();
+    saveState();
+};
+
+// 덕테이프 추가
+document.getElementById('addTapeBtn').onclick = function() {
+    var tape = addDuctTape({
+        left: CW / 2,
+        top: CH / 2,
+        width: Math.min(CW * 0.34, 360),
+        height: 58,
+        angle: -6,
+    });
+    canvas.setActiveObject(tape);
     canvas.renderAll();
     saveState();
 };

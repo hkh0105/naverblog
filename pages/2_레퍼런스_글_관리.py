@@ -1,4 +1,4 @@
-"""레퍼런스 글 관리 페이지 - 크롤링된 병원 블로그 글 조회/추가/삭제."""
+"""레퍼런스 글 관리 페이지 - 크롤링된 보보쌤 블로그 글 조회/추가/삭제."""
 
 from __future__ import annotations
 
@@ -18,7 +18,7 @@ inject_secrets()
 from naverblog.database import Database, create_database
 
 st.set_page_config(
-    page_title="레퍼런스 글 관리 | 메디블로그",
+    page_title="레퍼런스 글 관리 | 보보쌤",
     page_icon="📖",
     layout="wide",
 )
@@ -29,7 +29,7 @@ st.markdown("""
     html, body, [class*="css"] { font-family: 'Noto Sans KR', sans-serif; }
     .block-container { max-width: 960px; padding-top: 1.5rem; }
     .page-header {
-        background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 50%, #c4b5fd 100%);
+        background: linear-gradient(135deg, #0f766e 0%, #c85a3a 58%, #f2a65a 100%);
         padding: 2rem 2.5rem;
         border-radius: 1.25rem;
         color: white;
@@ -51,7 +51,7 @@ db = get_db()
 st.markdown("""
 <div class="page-header">
     <h1>레퍼런스 글 관리</h1>
-    <p>병원 내부에서 검토한 글을 직접 등록하고 관리합니다. 이 글들이 새 글 생성 시 참조됩니다.</p>
+    <p>보보쌤 블로그 글을 직접 등록하고 관리합니다. 이 글들이 새 글 생성 시 참조됩니다.</p>
 </div>
 """, unsafe_allow_html=True)
 
@@ -138,10 +138,10 @@ with tab_list:
 # ═══════════════════════════════════════
 with tab_add:
     st.markdown("### 새 레퍼런스 글 추가")
-    st.caption("의료진이 직접 작성하거나 검토한 병원 블로그 글을 추가합니다.")
+    st.caption("보보쌤이 작성한 글이나 참고할 글을 직접 추가합니다.")
 
     with st.form("add_post"):
-        add_title = st.text_input("제목", placeholder="예: 강남 내과 감기 증상과 병원 방문 기준")
+        add_title = st.text_input("제목", placeholder="예: 의대 면접 1분 자기소개 준비법")
         add_category = st.selectbox(
             "카테고리",
             categories + ["직접 입력"],
@@ -156,7 +156,7 @@ with tab_add:
             height=400,
             placeholder="블로그 글 본문을 붙여넣으세요...",
         )
-        add_link = st.text_input("원문 링크 (선택)", placeholder="https://example-clinic.kr/blog/...")
+        add_link = st.text_input("원문 링크 (선택)", placeholder="https://blog.naver.com/byhur99/...")
 
         add_btn = st.form_submit_button("➕ 레퍼런스 글 추가", type="primary")
 

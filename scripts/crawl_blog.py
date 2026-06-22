@@ -1,4 +1,4 @@
-"""메디블로그 네이버블로그 RSS 크롤링 → DB 저장.
+"""보보쌤 네이버 블로그 RSS 크롤링 → DB 저장.
 
 Usage:
     python scripts/crawl_blog.py

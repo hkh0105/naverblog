@@ -1,20 +1,21 @@
-"""Optional Naver Blog RSS crawler for manually configured clinic references.
+"""보보쌤 네이버 블로그 RSS 크롤링 모듈.
 
-The Streamlit app does not auto-crawl by default. Set CLINIC_BLOG_ID when
-you want to import posts from a clinic-owned blog into the reference database.
+app.py 시작 시 DB가 비어있으면 자동 실행됩니다.
 """
 from __future__ import annotations
 
-import os
 import re
+import ssl
 import time
 import xml.etree.ElementTree as ET
 from html import unescape
 from urllib.request import Request, urlopen
 
+import certifi
+
 from naverblog.database import Database
 
-BLOG_ID = os.getenv("CLINIC_BLOG_ID", "clinic_blog_id")
+BLOG_ID = "byhur99"
 RSS_URL = f"https://rss.blog.naver.com/{BLOG_ID}.xml"
 POST_VIEW_URL = "https://blog.naver.com/PostView.naver?blogId={blog_id}&logNo={post_id}&directAccess=false"
 
@@ -24,7 +25,8 @@ def fetch_url(url: str) -> str:
         "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) "
                       "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
     })
-    with urlopen(req, timeout=15) as resp:
+    context = ssl.create_default_context(cafile=certifi.where())
+    with urlopen(req, timeout=15, context=context) as resp:
         return resp.read().decode("utf-8", errors="replace")
 
 

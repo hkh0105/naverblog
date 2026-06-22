@@ -426,7 +426,7 @@ if history:
 with st.form("keyword_form"):
     keyword_input = st.text_input(
         "분석할 키워드",
-        placeholder="예: 강남 내과 감기, 피부과 여드름 치료, 건강검진 비용",
+        placeholder="예: 의대 면접, 세특 주제, 겨울방학 공부법",
         help="쉼표로 구분하여 여러 키워드를 입력할 수 있습니다 (최대 5개)",
     )
     submitted = st.form_submit_button(
@@ -1334,7 +1334,7 @@ if submitted and keyword_input.strip():
                 "related": [m.keyword for m in metrics[1:6]],
             }
             st.success(
-                "키워드가 저장되었습니다! **메인 페이지(메디블로그 AI 마케팅 툴)**에서 글을 생성해주세요."
+                "키워드가 저장되었습니다! **메인 페이지(보보쌤 블로그 글 생성기)**에서 글을 생성해주세요."
             )
 
 elif submitted:

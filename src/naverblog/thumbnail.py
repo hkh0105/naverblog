@@ -1,4 +1,4 @@
-"""블로그 썸네일 이미지 생성 (Pillow) - 메디블로그 미리캔버스 스타일."""
+"""블로그 썸네일 이미지 생성 (Pillow) - 보보쌤 미리캔버스 스타일."""
 
 from __future__ import annotations
 
@@ -8,18 +8,28 @@ from PIL import Image, ImageDraw, ImageFont
 
 from naverblog.watermark import _find_korean_font, _hex_to_rgb
 
-# ─── 색상 프리셋 (병원 블로그 실제 스타일 기반) ───
+# ─── 색상 프리셋 (보보쌤 블로그 스타일 기반) ───
 
 THUMBNAIL_PRESETS: dict[str, dict] = {
-    "메디블로그 기본 (크림)": {
+    "보보쌤 기본 (크림)": {
         "bg_color": "#FDF6EC",
         "text_color": "#1a1a1a",
         "highlight_color": "#FFE066",
-        "accent_color": "#7c3aed",
-        "branding_color": "#888888",
-        "description": "병원 블로그 실제 스타일",
+        "accent_color": "#C85A3A",
+        "branding_color": "#8B5E3C",
+        "use_tape": False,
+        "description": "보보쌤 블로그 스타일",
     },
-    "메디블로그 퍼플": {
+    "보보쌤 덕테이프": {
+        "bg_color": "#FDF6EC",
+        "text_color": "#1a1a1a",
+        "highlight_color": "#FFE066",
+        "accent_color": "#C85A3A",
+        "branding_color": "#8B5E3C",
+        "use_tape": True,
+        "description": "찢긴 테이프 메모 스타일",
+    },
+    "보보쌤 퍼플": {
         "bg_color": "#F5F0FF",
         "text_color": "#1a1a1a",
         "highlight_color": "#C4B5FD",
@@ -175,30 +185,85 @@ def _draw_separator(
     )
 
 
+def _draw_duct_tape(
+    img: Image.Image,
+    x: int,
+    y: int,
+    width: int,
+    height: int,
+    color_hex: str = "#d9d3c1",
+    angle: float = -6,
+    opacity: int = 220,
+) -> None:
+    """찢긴 테이프 느낌의 반투명 장식."""
+    r, g, b = _hex_to_rgb(color_hex)
+    pad = max(16, height // 2)
+    tape = Image.new("RGBA", (width + pad * 2, height + pad * 2), (0, 0, 0, 0))
+    draw = ImageDraw.Draw(tape)
+    ox = oy = pad
+    tooth = max(7, int(height * 0.18))
+
+    points = [
+        (ox, oy + tooth),
+        (ox + tooth, oy),
+        (ox + width - tooth, oy),
+        (ox + width, oy + tooth),
+        (ox + width - tooth // 2, oy + int(height * 0.35)),
+        (ox + width, oy + int(height * 0.6)),
+        (ox + width - tooth, oy + height),
+        (ox + tooth, oy + height),
+        (ox, oy + height - tooth),
+        (ox + tooth // 2, oy + int(height * 0.62)),
+        (ox, oy + int(height * 0.36)),
+    ]
+
+    draw.polygon(points, fill=(r, g, b, opacity), outline=(86, 73, 58, 60))
+    for lx in range(ox + 12, ox + width - 12, 28):
+        draw.line(
+            [(lx, oy + height - 5), (lx + int(height * 0.45), oy + 5)],
+            fill=(255, 255, 255, 68),
+            width=2,
+        )
+    draw.line(
+        [(ox + int(width * 0.08), oy + int(height * 0.32)), (ox + int(width * 0.92), oy + int(height * 0.26))],
+        fill=(92, 72, 52, 36),
+        width=1,
+    )
+    draw.line(
+        [(ox + int(width * 0.1), oy + int(height * 0.68)), (ox + int(width * 0.9), oy + int(height * 0.72))],
+        fill=(92, 72, 52, 30),
+        width=1,
+    )
+
+    rotated = tape.rotate(angle, expand=True, resample=Image.Resampling.BICUBIC)
+    img.paste(rotated, (x - pad, y - pad), rotated)
+
+
 def render_thumbnail(
     title: str = "",
     title_lines: list[dict] | None = None,
     subtitle: str = "",
     subtitle_color: str | None = None,
     category_label: str = "",
-    branding_text: str = "메디블로그 AI 병원 건강정보",
+    branding_text: str = "의대 간 보보쌤의 공부 & 입시 연구소",
     bg_color: str = "#FDF6EC",
     text_color: str = "#1a1a1a",
     highlight_color: str = "#FFE066",
-    accent_color: str = "#7c3aed",
-    branding_color: str = "#888888",
+    accent_color: str = "#C85A3A",
+    branding_color: str = "#8B5E3C",
     title_font_size: int = 64,
     subtitle_font_size: int = 32,
     use_highlight: bool = True,
     highlight_line: int = -1,
     use_separator: bool = False,
+    use_tape: bool = False,
     layout: str = "center",
     title_y_offset: int = 0,
     width: int = 1200,
     height: int = 628,
     gradient_end_color: str | None = None,
 ) -> bytes:
-    """병원 글쓰기 스타일 블로그 썸네일을 생성합니다.
+    """보보쌤 글쓰기 스타일 블로그 썸네일을 생성합니다.
 
     title_lines를 제공하면 줄별 개별 스타일링이 적용됩니다.
     title_lines 각 항목: {"text", "color", "highlight", "highlight_color", "y_offset"}
@@ -224,6 +289,29 @@ def render_thumbnail(
     subtitle_font = _find_korean_font(subtitle_font_size)
     category_font = _find_korean_font(max(20, subtitle_font_size - 8))
     branding_font = _find_korean_font(max(18, subtitle_font_size - 10))
+
+    if use_tape:
+        tape_w = max(160, int(width * 0.24))
+        tape_h = max(38, int(height * 0.075))
+        _draw_duct_tape(
+            img,
+            int(width * 0.2),
+            int(height * 0.11),
+            tape_w,
+            tape_h,
+            "#d9d3c1",
+            -7,
+        )
+        _draw_duct_tape(
+            img,
+            int(width * 0.58),
+            int(height * 0.115),
+            tape_w,
+            tape_h,
+            "#e8d6b8",
+            7,
+        )
+        draw = ImageDraw.Draw(img)
 
     # 줄 높이
     title_lh = _line_height(draw, title_font)

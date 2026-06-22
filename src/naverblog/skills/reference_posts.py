@@ -1,4 +1,4 @@
-"""레퍼런스 포스트 스킬 - 메디블로그의 기존 글을 참조 컨텍스트로 제공.
+"""레퍼런스 포스트 스킬 - 보보쌤의 기존 글을 참조 컨텍스트로 제공.
 
 DB에 크롤링된 실제 블로그 글 중 해당 카테고리의 글을 선별하여
 LLM 프롬프트에 주입합니다. 글 생성 시 실제 문체/구조를 참고합니다.
@@ -9,7 +9,7 @@ from naverblog.skills.base import SkillBase, SkillContext, SkillResult
 
 
 class ReferencePostsSkill(SkillBase):
-    """병원 레퍼런스 글 레퍼런스 스킬."""
+    """보보쌤 기존 글 레퍼런스 스킬."""
 
     @property
     def name(self) -> str:
@@ -17,7 +17,7 @@ class ReferencePostsSkill(SkillBase):
 
     @property
     def description(self) -> str:
-        return "병원 레퍼런스 글 참조 (실제 글을 컨텍스트로 제공)"
+        return "보보쌤 기존 블로그 글 참조 (실제 글을 컨텍스트로 제공)"
 
     def execute(self, context: SkillContext) -> SkillResult:
         category = getattr(context, "category", None) or ""
@@ -73,8 +73,8 @@ class ReferencePostsSkill(SkillBase):
 
         # 프롬프트용 텍스트 생성
         parts = [
-            "## 병원 레퍼런스 글 레퍼런스\n"
-            f"아래는 병원에서 검토한 블로그 글 {n}개입니다. "
+            "## 보보쌤 기존 블로그 글 레퍼런스\n"
+            f"아래는 보보쌤이 실제로 작성한 블로그 글 {n}개입니다. "
             "이 글들의 문체, 구조, 표현 방식을 참고하여 새 글을 작성하세요.\n"
         ]
 

@@ -17,20 +17,13 @@ st.markdown("""
     .block-container { max-width: 900px; padding-top: 1.5rem; }
 
     .guide-hero {
-        background: linear-gradient(135deg, #6366f1 0%, #818cf8 50%, #a5b4fc 100%);
+        background: linear-gradient(135deg, #0f766e 0%, #c85a3a 58%, #f2a65a 100%);
         padding: 2rem 2.5rem 1.5rem;
         border-radius: 1.25rem;
         color: white;
         margin-bottom: 2rem;
         position: relative;
         overflow: hidden;
-    }
-    .guide-hero::before {
-        content: '';
-        position: absolute; top: -50%; right: -20%;
-        width: 400px; height: 400px;
-        background: radial-gradient(circle, rgba(255,255,255,0.08) 0%, transparent 70%);
-        border-radius: 50%;
     }
     .guide-hero h1 {
         color: white !important;
@@ -126,7 +119,7 @@ st.markdown("""
         text-decoration: none;
         border-bottom: 1px solid #f3f4f6;
     }
-    .toc-item:hover { color: #6366f1; }
+    .toc-item:hover { color: #0f766e; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -407,8 +400,8 @@ st.markdown("""
 st.markdown("""
 <div class="tip-box">
     💡 <strong>실전 예시:</strong><br>
-    "감기 증상 병원 방문 기준" → 포화지수 100+ (극도로 포화)<br>
-    "강남 내과 감기 몸살 진료" → 포화지수 0.2 (블루오션!)<br><br>
+    "의대 면접 준비" → 포화지수 100+ (극도로 포화)<br>
+    "의대 면접 1분 자기소개 예시" → 포화지수 0.2 (블루오션!)<br><br>
     포화지수가 높은 키워드는 더 구체적인 롱테일 키워드로 쪼개면 기회를 찾을 수 있습니다.
 </div>
 """, unsafe_allow_html=True)
@@ -470,10 +463,10 @@ st.markdown("""
 연관 키워드를 **공통 주제별로 묶어** 보여줍니다.
 같은 클러스터의 키워드는 하나의 글에서 함께 다루면 SEO에 효과적입니다.
 
-예시: "강남 내과" 키워드 클러스터
-- 🏷️ **내과** 클러스터: 강남 내과, 강남 내과 진료, 강남역 내과, 주말 내과 진료
-- 🏷️ **피부과** 클러스터: 피부과 여드름 치료, 피부과 흉터 상담, 피부과 색소 치료
-- 🏷️ **검진** 클러스터: 건강검진 비용, 건강검진 전 준비, 예방접종 주의사항
+예시: "의대 면접" 키워드 클러스터
+- 🏷️ **면접** 클러스터: 의대 면접, 의대 면접 질문, 의대 면접 1분 자기소개
+- 🏷️ **생기부** 클러스터: 의대 세특, 생기부 세특 주제, 수시 생기부 관리
+- 🏷️ **공부법** 클러스터: 겨울방학 공부법, 수능 국어 공부법, 내신 1등급 공부법
 """)
 
 st.markdown("")
@@ -547,7 +540,7 @@ st.markdown("""
     <h4>🔄 주기적 패턴 (계절성)</h4>
     <p>
     매년 특정 시기에 반복적으로 오르내리는 패턴입니다.<br>
-    예: "건강검진" (11월 급등), "여름 다이어트" (5~7월 상승)<br>
+    예: "수시 원서 접수" (8~9월 급등), "겨울방학 공부법" (12~1월 상승)<br>
     <strong>상승 시기 1~2개월 전에 글을 발행</strong>하면 트래픽을 극대화할 수 있습니다.
     </p>
 </div>
@@ -557,7 +550,7 @@ st.markdown("""
 <div class="tip-box">
     💡 <strong>키워드 비교 활용:</strong><br>
     유사한 키워드를 비교하여 더 인기 있는 표현을 제목에 사용하세요.<br>
-    예: "감기 증상 병원 방문 기준" vs "건강검진 준비 방법" → 트렌드가 더 높은 쪽을 메인 키워드로!
+    예: "의대 면접 준비" vs "의대 면접 1분 자기소개" → 트렌드가 더 높은 쪽을 메인 키워드로!
 </div>
 """, unsafe_allow_html=True)
 
@@ -587,17 +580,17 @@ st.markdown("""
 
 | 연령대 | 글쓰기 팁 |
 |--------|-----------|
-| **20~39세** (초진 환자) | 쉬운 설명, 방문 기준, 예약 전 준비사항 |
+| **10~19세** (수험생) | 친근한 설명, 실행 가능한 공부법, 동기부여 |
 | **40~54세** (보호자) | 전문적 + 따뜻한 톤, 가족 건강관리 관점 |
-| **55세 이상** (만성질환 환자) | 차분한 톤, 검사 주기, 생활관리 강조 |
-| **전체** (일반 환자) | 과장 없는 정보, FAQ, 의료진 코멘트 |
+| **40~59세** (학부모) | 차분한 톤, 입시 구조 설명, 자녀 지도 포인트 |
+| **전체** (일반 독자) | 쉬운 용어, FAQ, 보보쌤 경험 기반 코멘트 |
 """)
 
 st.markdown("""
 <div class="tip-box">
     💡 <strong>페르소나 매칭:</strong><br>
-    인구통계 결과와 병원 블로그 생성기의 <strong>페르소나(대상 독자)</strong>를 매칭하세요.<br>
-    보호자 비율 높음 → "보호자" 페르소나 / 학생 비율 높음 → "일반 환자" 페르소나
+    인구통계 결과와 보보쌤 블로그 생성기의 <strong>페르소나(대상 독자)</strong>를 매칭하세요.<br>
+    학부모 비율 높음 → "학부모" 페르소나 / 학생 비율 높음 → "고등학생" 페르소나
 </div>
 """, unsafe_allow_html=True)
 
@@ -693,8 +686,8 @@ st.markdown("""
     <p>
     <strong>제목 공식:</strong> [메인 키워드] + [연관 키워드] + [차별화 요소]<br><br>
     예시:<br>
-    • 메인: "강남 내과" → "2026 강남 내과 감기 총정리 (의료진 검토)"<br>
-    • 메인: "건강검진 준비사항" → "건강검진 준비사항 작성법 5가지 (의료진 검토 체크리스트)"<br><br>
+    • 메인: "의대 면접" → "2026 의대 면접 준비 총정리 (보보쌤 체크리스트)"<br>
+    • 메인: "세특 주제" → "의대 세특 주제 찾는 법 5가지 (보보쌤 실전 가이드)"<br><br>
     <strong>본문 키워드 배치:</strong><br>
     • H2 소제목에 검색량 높은 연관 키워드 배치<br>
     • 자연스럽게 3~5개 연관 키워드를 본문에 포함<br>
@@ -746,7 +739,7 @@ st.markdown("""
 st.markdown("")
 st.markdown("""
 <div style="text-align: center; padding: 1.5rem 0; color: #a1a1aa; font-size: 0.75rem;">
-    키워드 분석 가이드 · 메디블로그 AI 마케팅 툴<br>
-    <span style="color: #818cf8;">데이터 기반 블로그 SEO 전략</span>
+    키워드 분석 가이드 · 보보쌤 블로그 글 생성기<br>
+    <span style="color: #0f766e;">데이터 기반 블로그 SEO 전략</span>
 </div>
 """, unsafe_allow_html=True)
