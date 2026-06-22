@@ -23,6 +23,11 @@ DEFAULT_MODEL_NAME = "Claude Opus 4.8"
 VERIFIED_GPT55_MODEL_NAME = "GPT-5.5"
 GPT55_VERIFIED_ENV = "NAVERBLOG_GPT55_VERIFIED"
 DEFAULT_MODEL_ENV = "NAVERBLOG_DEFAULT_MODEL"
+PROVIDER_ENV_VARS = {
+    "anthropic": "ANTHROPIC_API_KEY",
+    "openai": "OPENAI_API_KEY",
+    "gemini": "GEMINI_API_KEY",
+}
 
 
 def resolve_model(name: str) -> str:
@@ -32,6 +37,44 @@ def resolve_model(name: str) -> str:
     if name in MODEL_REGISTRY:
         return MODEL_REGISTRY[name]
     raise ValueError(f"알 수 없는 모델: '{name}'. 사용 가능: {list(MODEL_REGISTRY.keys())}")
+
+
+def get_model_provider(name: str) -> str:
+    """모델 이름에 필요한 provider를 반환."""
+    model_id = resolve_model(name)
+    if model_id.startswith("claude-") or model_id.startswith("anthropic/"):
+        return "anthropic"
+    if model_id.startswith("gemini/"):
+        return "gemini"
+    if model_id.startswith("gpt-") or model_id.startswith("openai/"):
+        return "openai"
+    return "openai"
+
+
+def get_required_env_var(name: str) -> str:
+    """모델 호출에 필요한 환경변수 이름."""
+    provider = get_model_provider(name)
+    return PROVIDER_ENV_VARS[provider]
+
+
+def has_required_api_key(name: str) -> bool:
+    """선택한 모델의 API 키가 설정되어 있는지 확인."""
+    return bool(os.environ.get(get_required_env_var(name)))
+
+
+def format_missing_api_key_message(name: str) -> str:
+    """사용자에게 보여줄 API 키 누락 안내."""
+    env_var = get_required_env_var(name)
+    provider = get_model_provider(name)
+    provider_label = {
+        "anthropic": "Anthropic",
+        "openai": "OpenAI",
+        "gemini": "Google Gemini",
+    }.get(provider, provider)
+    return (
+        f"{name} 모델을 사용하려면 {provider_label} API 키가 필요합니다. "
+        f"Streamlit Cloud의 App settings > Secrets에 `{env_var}`를 등록한 뒤 앱을 재부팅해주세요."
+    )
 
 
 def get_default_model_name() -> str:
@@ -64,6 +107,9 @@ def generate(
 ) -> str:
     """LLM을 호출하여 텍스트를 생성."""
     model_id = resolve_model(model)
+    if not has_required_api_key(model):
+        raise RuntimeError(format_missing_api_key_message(model))
+
     messages = [
         {"role": "system", "content": system_prompt},
         {"role": "user", "content": user_prompt},

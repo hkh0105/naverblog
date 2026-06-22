@@ -22,7 +22,12 @@ from naverblog.image_gen import (
     get_image_model_id,
     list_image_model_names,
 )
-from naverblog.llm import get_default_model_name, list_model_names
+from naverblog.llm import (
+    format_missing_api_key_message,
+    get_default_model_name,
+    has_required_api_key,
+    list_model_names,
+)
 from naverblog.models import Persona, PostType
 from naverblog.pipeline import run_pipeline
 from naverblog.skills import SkillRegistry
@@ -309,6 +314,8 @@ with st.sidebar:
         "AI 모델", model_names, index=default_model_index, label_visibility="collapsed",
         help="기본값은 Claude Opus 4.8입니다. GPT-5.5는 실제 호출 검증 후 기본값으로 전환합니다.",
     )
+    if not has_required_api_key(selected_model):
+        st.caption(f"키 필요: {format_missing_api_key_message(selected_model)}")
 
     st.markdown("")
 
@@ -525,6 +532,10 @@ with st.form("generate_form"):
 
 # ─── 생성 로직 ───
 if submitted and topic.strip():
+    if not has_required_api_key(selected_model):
+        st.error(format_missing_api_key_message(selected_model))
+        st.stop()
+
     # 페르소나 결정
     if selected_persona_name == "직접 입력":
         if not custom_persona_text.strip():
