@@ -27,6 +27,7 @@ class VocabularySourceSpec:
     """PDF별 단어장 생성 설정."""
 
     label: str
+    display_title: str
     word_count: int
     phrase_count: int
     sentence_count: int
@@ -45,8 +46,10 @@ def build_vocabulary_prompts(
     source_blocks = []
     for source in sources:
         spec = spec_by_label[source.label]
+        title = spec.display_title.strip() or source.label
         source_blocks.append(
             f"""## PDF: {source.label}
+표시 제목: {title}
 설정:
 - 단어/표현 문항 수: {spec.word_count}
 - 동사구/숙어/구절 최소 포함 수: {spec.phrase_count}
@@ -111,6 +114,7 @@ def build_vocabulary_prompts(
 - JSON 외의 설명, Markdown 코드펜스, 주석을 붙이지 마세요.
 - items 개수는 PDF별 설정과 정확히 맞추세요.
 - kind가 "phrase"인 항목은 동사구/숙어/구절입니다.
+- sources[].title과 sentences[].source는 반드시 각 PDF의 "표시 제목"을 그대로 쓰세요.
 - chunks는 영어 문장의 순서대로 의미 단위를 끊고, 한국어도 같은 순서로 대응시킵니다.
 - source_question은 알 수 있으면 "34번"처럼 쓰고, 불명확하면 빈 문자열로 둡니다.
 
@@ -209,35 +213,24 @@ def render_vocabulary_test_images(data: dict[str, Any]) -> list[Image.Image]:
         if not items:
             continue
         color = colors[source_idx % len(colors)]
-        rows = math.ceil(len(items) / 2)
-        section_h = 76 + rows * 66 + 26
-        ctx.ensure(section_h + 18)
-        x0, y0, x1 = ctx.margin_x, ctx.y, ctx.page_w - ctx.margin_x
-        draw.rounded_rectangle((x0, y0, x1, y0 + section_h), radius=18, fill=PALETTE["white"], outline=PALETTE["line"], width=2)
-        draw.rounded_rectangle((x0, y0, x1, y0 + 58), radius=18, fill=color)
-        draw.rectangle((x0, y0 + 32, x1, y0 + 58), fill=color)
-        draw.text((x0 + 26, y0 + 15), _short_label(source.get("title", "PDF 자료")), font=_font(24, bold=True), fill=PALETTE["white"])
-        draw.text((x1 - 190, y0 + 17), "뜻을 쓰시오", font=_font(20), fill=PALETTE["white"])
-
-        col_w = (x1 - x0 - 62) // 2
-        for idx, item in enumerate(items):
-            col = idx // rows
-            row = idx % rows
-            x = x0 + 28 + col * col_w
-            y = y0 + 88 + row * 66
-            term = item["term"]
-            badge = "표현" if item.get("kind") == "phrase" else "단어"
-            draw.text((x, y), f"{no:02d}.", font=_font(22, bold=True), fill=color)
-            draw.text((x + 54, y - 3), term, font=_font(25, bold=True), fill=PALETTE["ink"])
-            draw.rounded_rectangle((x + col_w - 116, y - 5, x + col_w - 48, y + 27), radius=13, fill=PALETTE["soft_blue"])
-            draw.text((x + col_w - 100, y + 1), badge, font=_font(15, bold=True), fill=PALETTE["blue"])
-            draw.line((x + 350, y + 37, x + col_w - 40, y + 37), fill=(185, 194, 204), width=2)
-            no += 1
-        ctx.y += section_h + 28
+        chunks = _chunk_items_for_test(items, max_items=16)
+        for chunk_idx, chunk in enumerate(chunks):
+            no = _draw_vocab_test_section(
+                ctx=ctx,
+                title=source.get("title", "PDF 자료"),
+                items=chunk,
+                color=color,
+                start_no=no,
+                continued=chunk_idx > 0,
+            )
 
     sentences = data.get("sentences", [])
+    draw = ctx.draw
     if sentences:
-        ctx.ensure(78)
+        first_lines = _wrapped_lines(draw, sentences[0]["sentence"], _font(23), ctx.content_w - 60)
+        first_box_h = 88 + len(first_lines) * 35 + 108
+        ctx.ensure(74 + first_box_h + 22)
+        draw = ctx.draw
         draw.text((ctx.margin_x, ctx.y), "문장 해석", font=_font(35, bold=True), fill=PALETTE["ink"])
         draw.text((ctx.margin_x + 190, ctx.y + 10), "난도 있는 문장을 자연스럽게 해석하세요.", font=_font(20), fill=PALETTE["muted"])
         ctx.y += 74
@@ -249,6 +242,7 @@ def render_vocabulary_test_images(data: dict[str, Any]) -> list[Image.Image]:
         sentence_lines = _wrapped_lines(draw, sentence["sentence"], _font(23), ctx.content_w - 60)
         box_h = 88 + len(sentence_lines) * 35 + 108
         ctx.ensure(box_h + 22)
+        draw = ctx.draw
         x0, y0, x1 = ctx.margin_x, ctx.y, ctx.page_w - ctx.margin_x
         draw.rounded_rectangle((x0, y0, x1, y0 + box_h), radius=16, fill=PALETTE["white"], outline=PALETTE["line"], width=2)
         draw.text((x0 + 28, y0 + 22), label, font=_font(21, bold=True), fill=PALETTE["blue"])
@@ -278,6 +272,7 @@ def render_vocabulary_answer_images(data: dict[str, Any]) -> list[Image.Image]:
             continue
         color = colors[source_idx % len(colors)]
         ctx.ensure(74)
+        draw = ctx.draw
         x0, x1 = ctx.margin_x, ctx.page_w - ctx.margin_x
         draw.rounded_rectangle((x0, ctx.y, x1, ctx.y + 54), radius=16, fill=color)
         draw.text((x0 + 26, ctx.y + 14), _short_label(source.get("title", "PDF 자료")), font=_font(23, bold=True), fill=PALETTE["white"])
@@ -290,6 +285,7 @@ def render_vocabulary_answer_images(data: dict[str, Any]) -> list[Image.Image]:
             meaning_lines = _wrapped_lines(draw, item["meaning"], _font(21), 650)
             row_h = max(54, max(len(term_lines), len(meaning_lines)) * 31 + 22)
             ctx.ensure(row_h)
+            draw = ctx.draw
             y0 = ctx.y
             fill = (255, 255, 255) if no % 2 else (248, 251, 250)
             draw.rectangle((x0, y0, x1, y0 + row_h), fill=fill)
@@ -306,6 +302,7 @@ def render_vocabulary_answer_images(data: dict[str, Any]) -> list[Image.Image]:
     sentences = data.get("sentences", [])
     if sentences:
         ctx.ensure(80)
+        draw = ctx.draw
         draw.text((ctx.margin_x, ctx.y), "문장 직독직해", font=_font(35, bold=True), fill=PALETTE["ink"])
         ctx.y += 62
 
@@ -324,6 +321,7 @@ def render_vocabulary_answer_images(data: dict[str, Any]) -> list[Image.Image]:
         box_h += sum(max(len(en), len(ko)) * 30 + 12 for en, ko in chunk_lines)
         box_h += 58 + len(trans_lines) * 30
         ctx.ensure(box_h + 28)
+        draw = ctx.draw
 
         x0, y0, x1 = ctx.margin_x, ctx.y, ctx.page_w - ctx.margin_x
         draw.rounded_rectangle((x0, y0, x1, y0 + box_h), radius=16, fill=PALETTE["white"], outline=PALETTE["line"], width=2)
@@ -361,6 +359,82 @@ def vocabulary_images_to_zip_bytes(
             image.save(png, format="PNG")
             zf.writestr(f"vocab_answer_{idx:02d}.png", png.getvalue())
     return buf.getvalue()
+
+
+def _chunk_items_for_test(items: list[dict[str, Any]], max_items: int) -> list[list[dict[str, Any]]]:
+    return [items[idx : idx + max_items] for idx in range(0, len(items), max_items)]
+
+
+def _draw_vocab_test_section(
+    ctx: "_CanvasContext",
+    title: str,
+    items: list[dict[str, Any]],
+    color: tuple[int, int, int],
+    start_no: int,
+    continued: bool = False,
+) -> int:
+    """긴 표현이 겹치지 않도록 단어 테스트 섹션을 동적 행 높이로 그린다."""
+    draw = ctx.draw
+    x0, x1 = ctx.margin_x, ctx.page_w - ctx.margin_x
+    col_gap = 34
+    inner_pad = 28
+    col_w = (x1 - x0 - inner_pad * 2 - col_gap) // 2
+    rows = math.ceil(len(items) / 2)
+    term_font = _font(22, bold=True)
+    no_font = _font(20, bold=True)
+    badge_font = _font(14, bold=True)
+
+    row_heights: list[int] = []
+    for row in range(rows):
+        row_items = [items[row]]
+        second_idx = row + rows
+        if second_idx < len(items):
+            row_items.append(items[second_idx])
+        max_lines = 1
+        for item in row_items:
+            term_width = col_w - 150
+            max_lines = max(max_lines, len(_wrapped_lines(draw, item["term"], term_font, term_width)))
+        row_heights.append(max(78, max_lines * 29 + 50))
+
+    section_h = 70 + sum(row_heights) + 24
+    ctx.ensure(section_h + 22)
+    draw = ctx.draw
+    y0 = ctx.y
+
+    draw.rounded_rectangle((x0, y0, x1, y0 + section_h), radius=18, fill=PALETTE["white"], outline=PALETTE["line"], width=2)
+    draw.rounded_rectangle((x0, y0, x1, y0 + 58), radius=18, fill=color)
+    draw.rectangle((x0, y0 + 32, x1, y0 + 58), fill=color)
+    label = _short_label(title)
+    if continued:
+        label = f"{label} (계속)"
+    draw.text((x0 + 26, y0 + 15), label, font=_font(24, bold=True), fill=PALETTE["white"])
+    draw.text((x1 - 190, y0 + 17), "뜻을 쓰시오", font=_font(20), fill=PALETTE["white"])
+
+    no = start_no
+    y = y0 + 78
+    for row, row_h in enumerate(row_heights):
+        row_entries = [(0, items[row])]
+        second_idx = row + rows
+        if second_idx < len(items):
+            row_entries.append((1, items[second_idx]))
+
+        for col, item in row_entries:
+            x = x0 + inner_pad + col * (col_w + col_gap)
+            badge = "표현" if item.get("kind") == "phrase" else "단어"
+            term_lines = _wrapped_lines(draw, item["term"], term_font, col_w - 150)
+
+            draw.text((x, y + 5), f"{no:02d}.", font=no_font, fill=color)
+            _draw_lines(draw, term_lines, x + 52, y + 3, term_font, PALETTE["ink"], 29)
+            badge_x = x + col_w - 74
+            draw.rounded_rectangle((badge_x, y + 1, badge_x + 66, y + 30), radius=13, fill=PALETTE["soft_blue"])
+            draw.text((badge_x + 17, y + 6), badge, font=badge_font, fill=PALETTE["blue"])
+            line_y = y + row_h - 20
+            draw.line((x + 52, line_y, x + col_w - 8, line_y), fill=(185, 194, 204), width=2)
+            no += 1
+        y += row_h
+
+    ctx.y += section_h + 28
+    return no
 
 
 class _CanvasContext:

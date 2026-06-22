@@ -217,23 +217,34 @@ def render_markdown_to_images(markdown_text: str) -> list[Image.Image]:
         left_pad = 30 if is_translation else 24
         line_gap = 9 if is_translation else 10
         lines = _wrapped_lines(draw, text, font, content_w - left_pad * 2)
-        box_h = max(58, len(lines) * (_line_height(draw, font) + line_gap) + 28)
-        ensure_space(box_h + 18)
+        line_step = _line_height(draw, font) + line_gap
 
-        draw.rounded_rectangle(
-            (margin_x, y, page_w - margin_x, y + box_h),
-            radius=14,
-            fill=box_fill,
-            outline=PALETTE["line"],
-            width=1,
-        )
-        text_y = y + 16
-        if is_translation:
-            draw.text((margin_x + 18, text_y + 1), "*", font=_font(24, bold=True), fill=PALETTE["green"])
-        for wrapped in lines:
-            draw.text((margin_x + left_pad, text_y), wrapped, font=font, fill=fill)
-            text_y += _line_height(draw, font) + line_gap
-        y += box_h + 18
+        while lines:
+            available = page_h - bottom_margin - y
+            if available < 86:
+                _draw_footer(draw, page_w, page_h, len(pages) + 1)
+                pages.append(image)
+                image, draw, y = _new_page(page_w, page_h, page_no=len(pages) + 1)
+                available = page_h - bottom_margin - y
+
+            max_lines = max(1, (available - 34) // line_step)
+            chunk, lines = lines[:max_lines], lines[max_lines:]
+            box_h = max(58, len(chunk) * line_step + 28)
+
+            draw.rounded_rectangle(
+                (margin_x, y, page_w - margin_x, y + box_h),
+                radius=14,
+                fill=box_fill,
+                outline=PALETTE["line"],
+                width=1,
+            )
+            text_y = y + 16
+            if is_translation:
+                draw.text((margin_x + 18, text_y + 1), "*", font=_font(24, bold=True), fill=PALETTE["green"])
+            for wrapped in chunk:
+                draw.text((margin_x + left_pad, text_y), wrapped, font=font, fill=fill)
+                text_y += line_step
+            y += box_h + (8 if lines else 18)
 
     _draw_footer(draw, page_w, page_h, len(pages) + 1)
     pages.append(image)

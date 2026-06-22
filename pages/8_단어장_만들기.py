@@ -3,7 +3,9 @@
 from __future__ import annotations
 
 import json
+import re
 import sys
+import unicodedata
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -88,6 +90,13 @@ uploaded_pdfs = st.file_uploader(
     help="PDF 텍스트 추출이 가능한 문제지 파일을 업로드하세요.",
 )
 
+
+def _default_source_title(filename: str) -> str:
+    text = unicodedata.normalize("NFC", filename).replace(".pdf", "")
+    text = re.sub(r"[_\\-]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:48]
+
 model_names = list_model_names()
 default_model = get_default_model_name()
 default_index = model_names.index(default_model) if default_model in model_names else 0
@@ -118,6 +127,12 @@ with st.expander("PDF별 출제 설정", expanded=True):
 
         for idx, uploaded in enumerate(uploaded_pdfs):
             st.markdown(f"**{idx + 1}. {uploaded.name}**")
+            title = st.text_input(
+                "자료명",
+                value=_default_source_title(uploaded.name),
+                key=f"vocab_display_title_{idx}_{uploaded.name}",
+                help="시험지/답지에 표시될 제목입니다. 긴 파일명이 깨져 보이면 여기서 짧게 바꾸세요.",
+            )
             col1, col2, col3, col4 = st.columns([1, 1, 1, 1])
             with col1:
                 word_count = st.number_input(
@@ -156,6 +171,7 @@ with st.expander("PDF별 출제 설정", expanded=True):
             source_specs.append(
                 VocabularySourceSpec(
                     label=uploaded.name,
+                    display_title=title,
                     word_count=int(word_count),
                     phrase_count=int(min(phrase_count, word_count)),
                     sentence_count=int(sentence_count),

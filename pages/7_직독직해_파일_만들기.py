@@ -3,6 +3,8 @@
 from __future__ import annotations
 
 import sys
+import re
+import unicodedata
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / "src"))
@@ -87,6 +89,25 @@ uploaded_pdfs = st.file_uploader(
     help="PDF 텍스트 추출이 가능한 문제지 파일을 업로드하세요.",
 )
 
+
+def _default_source_title(filename: str) -> str:
+    text = unicodedata.normalize("NFC", filename).replace(".pdf", "")
+    text = re.sub(r"[_\\-]+", " ", text)
+    text = re.sub(r"\s+", " ", text).strip()
+    return text[:48]
+
+
+source_titles: dict[str, str] = {}
+if uploaded_pdfs:
+    with st.expander("PDF 표시 제목", expanded=True):
+        for idx, uploaded in enumerate(uploaded_pdfs):
+            source_titles[uploaded.name] = st.text_input(
+                f"{idx + 1}. 자료명",
+                value=_default_source_title(uploaded.name),
+                key=f"direct_display_title_{idx}_{uploaded.name}",
+                help="직독직해 결과의 섹션 제목으로 표시됩니다.",
+            )
+
 range_col1, range_col2, range_col3 = st.columns([1, 1, 2])
 with range_col1:
     question_start = st.number_input("시작 문항", min_value=1, max_value=200, value=18, step=1)
@@ -165,7 +186,7 @@ if generate_clicked:
                 extracted_sources.append(
                     extract_pdf_text(
                         uploaded.getvalue(),
-                        label=uploaded.name,
+                        label=source_titles.get(uploaded.name, uploaded.name),
                         page_start=page_start or None,
                         page_end=page_end or None,
                         max_chars=max_chars_per_pdf,
@@ -197,6 +218,8 @@ if generate_clicked:
                 max_tokens=14_000,
             )
             markdown_result = clean_markdown_response(markdown_result)
+            if len(markdown_result.strip()) < 20:
+                raise ValueError("모델 응답이 비어 있습니다. PDF 범위나 모델을 바꿔 다시 시도해주세요.")
         except Exception as exc:
             st.error(f"직독직해 생성 실패: {exc}")
             st.stop()
